@@ -1,25 +1,38 @@
-## Description : 
-A program to use SSH protocol as a VPN, it works simply by start SSH session on port 9000 and set local ip in windows proxy...
+# SSH VPN (C#)
 
-## Screenshots : 
-![image](https://github.com/omidmousavi/CSharp-SSH-VPN/assets/67155909/12b72ac7-92f6-47be-bdd5-abcabfc9458c)
-![image](https://github.com/omidmousavi/CSharp-SSH-VPN/assets/67155909/21a80309-2760-46df-b94c-bab82cce845d)
+## Description
+A professional program to use SSH protocol as a VPN. It works by starting an SSH session on port 9000 and setting the local IP in windows proxy settings.
 
-## Download compiled exe : 
-| Version | Donwload |
+## 🚀 Key Features
+- **Modern UI**: Support for Dark/Light mode.
+- **Bilingual**: Supports English and Farsi.
+- **Fast Connection**: Optimized SSH tunneling.
+- **Auto Proxy**: Automatically configures Windows proxy settings.
+
+## 📸 Screenshots
+![Main Interface](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/12b72ac7-92f6-47be-bdd5-abcabfc9458c)
+![Settings](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/21a80309-2760-46df-b94c-bab82cce845d)
+
+## 🛠 Project Roadmap (Phases)
+- **Phase 1**: Core functionality and basic UI (Completed)
+- **Phase 2**: Modern UI/UX overhaul, Dark Mode, and Animations (In Progress)
+- **Phase 3**: Localization (EN/FA) and Accessibility (Planned)
+- **Phase 4**: Advanced features like Server List, Ping detection, and Speed monitoring (Planned)
+
+## 🤝 Support & Sponsorship
+Supported by **Movti Group**.
+Maintained by [tahatehran](https://github.com/tahatehran)
+
+## 📥 Download
+| Version | Download |
 |---------|----------|
-| V 1.0.0 | [Donwload](https://github.com/omidmousavi/csharp-ssh-vpn/raw/master/ssh-vpn/bin/Debug/v1.0.0.rar) |
-| V 2.0.0 | [Donwload](https://github.com/omidmousavi/csharp-ssh-vpn/raw/master/ssh-vpn/bin/Debug/v2.0.0.rar) |
+| Latest  | [Download Here](https://github.com/tahatehran/CSharp-SSH-VPN/releases) |
 
-## Ignored hosts :
-You can add this ignored host list to your proxy setting. it is suggested to use for more security and better performance...
-[Click to see](https://github.com/omidmousavi/CSharp-SSH-VPN/blob/master/ssh-vpn/ignored-host.txt)
+## 🛡 Security (PASS.md)
+For information on how your credentials and settings are stored, please refer to [PASS.md](./PASS.md).
 
-## How to buy server :
-https://github.com/iranxray/hope/blob/main/buy-server.md
+## 🤖 AI Agents (AGENT.md)
+Instructions for AI agents working on this codebase can be found in [AGENT.md](./AGENT.md).
 
-## How to config server (With Segaro) :
-https://telegra.ph/How-to-create-a-user-and-use-SSH-Proxy-with-iSegaro-07-07
-
-## Learn more about filtering...
-https://github.com/iranxray/hope
+## Learn more
+For more information about filtering and bypass techniques, visit [Hope Project](https://github.com/iranxray/hope).

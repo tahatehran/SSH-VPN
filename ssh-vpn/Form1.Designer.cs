@@ -1,4 +1,4 @@
-﻿namespace ssh_vpn
+namespace ssh_vpn
 {
     partial class Form1
     {
@@ -37,12 +37,16 @@
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.lblStatus = new System.Windows.Forms.Label();
             this.btnGh = new System.Windows.Forms.Button();
+            this.lblSponsor = new System.Windows.Forms.Label();
+            this.lblPing = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // btnToggle
             // 
             this.btnToggle.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnToggle.Font = new System.Drawing.Font("Microsoft YaHei", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnToggle.FlatAppearance.BorderSize = 2;
+            this.btnToggle.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnToggle.Font = new System.Drawing.Font("Segoe UI Semibold", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnToggle.Location = new System.Drawing.Point(12, 12);
             this.btnToggle.Name = "btnToggle";
             this.btnToggle.Size = new System.Drawing.Size(260, 73);
@@ -65,7 +69,9 @@
             // btnOpenSettings
             // 
             this.btnOpenSettings.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnOpenSettings.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.25F);
+            this.btnOpenSettings.FlatAppearance.BorderSize = 1;
+            this.btnOpenSettings.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnOpenSettings.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnOpenSettings.Location = new System.Drawing.Point(73, 161);
             this.btnOpenSettings.Name = "btnOpenSettings";
             this.btnOpenSettings.Size = new System.Drawing.Size(199, 52);
@@ -89,8 +95,8 @@
             // 
             this.lblStatus.BackColor = System.Drawing.Color.Red;
             this.lblStatus.Cursor = System.Windows.Forms.Cursors.Default;
-            this.lblStatus.Font = new System.Drawing.Font("Microsoft YaHei", 14.25F);
-            this.lblStatus.ForeColor = System.Drawing.SystemColors.Control;
+            this.lblStatus.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblStatus.ForeColor = System.Drawing.Color.White;
             this.lblStatus.Location = new System.Drawing.Point(12, 91);
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Size = new System.Drawing.Size(260, 64);
@@ -113,18 +119,41 @@
             this.btnGh.UseVisualStyleBackColor = false;
             this.btnGh.Click += new System.EventHandler(this.btnGh_Click);
             // 
+            // lblSponsor
+            //
+            this.lblSponsor.AutoSize = true;
+            this.lblSponsor.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblSponsor.Location = new System.Drawing.Point(12, 220);
+            this.lblSponsor.Name = "lblSponsor";
+            this.lblSponsor.Size = new System.Drawing.Size(148, 13);
+            this.lblSponsor.TabIndex = 7;
+            this.lblSponsor.Text = "Supported by Movti Group";
+            //
+            // lblPing
+            //
+            this.lblPing.AutoSize = true;
+            this.lblPing.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblPing.Location = new System.Drawing.Point(200, 220);
+            this.lblPing.Name = "lblPing";
+            this.lblPing.Size = new System.Drawing.Size(72, 13);
+            this.lblPing.TabIndex = 8;
+            this.lblPing.Text = "Ping: --- ms";
+            this.lblPing.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            //
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.ClientSize = new System.Drawing.Size(283, 227);
+            this.ClientSize = new System.Drawing.Size(283, 242);
+            this.Controls.Add(this.lblPing);
+            this.Controls.Add(this.lblSponsor);
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.btnGh);
             this.Controls.Add(this.btnOpenSettings);
             this.Controls.Add(this.githubLink);
             this.Controls.Add(this.btnToggle);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject(".Icon")));
             this.MaximizeBox = false;
             this.Name = "Form1";
             this.Text = "SSH VPN";
@@ -142,6 +171,7 @@
         private System.Windows.Forms.Button btnGh;
         private System.Windows.Forms.Label lblStatus;
         public System.Windows.Forms.Button btnToggle;
+        private System.Windows.Forms.Label lblSponsor;
+        private System.Windows.Forms.Label lblPing;
     }
 }
-
