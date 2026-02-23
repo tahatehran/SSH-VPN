@@ -58,6 +58,8 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Form1.Designer.cs">
+    <Compile Include="LanguageManager.cs" />
+    <Compile Include="ThemeManager.cs" />
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />

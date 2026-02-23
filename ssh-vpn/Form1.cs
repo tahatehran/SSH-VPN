@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Net.NetworkInformation;
 using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
@@ -15,15 +16,105 @@ namespace ssh_vpn
         {
             InitializeComponent();
             SystemEvents.SessionEnding += new SessionEndingEventHandler(SystemEvents_SessionEnding);
+            LoadSettings();
         }
 
         SshClient sshClient = new SshClient("0.0.0.0", 22, "0000", "0000");
         ForwardedPortDynamic portForwarded = new ForwardedPortDynamic(9000);
 
+        private void LoadSettings()
+        {
+            string keyName = "ssh_vpn";
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey(keyName))
+            {
+                if (key != null)
+                {
+                    object langValue = key.GetValue("language");
+                    if (langValue != null)
+                        LanguageManager.CurrentLanguage = (LanguageManager.Language)Convert.ToInt32(langValue);
+
+                    object themeValue = key.GetValue("theme");
+                    if (themeValue != null)
+                        ThemeManager.CurrentTheme = (ThemeManager.Theme)Convert.ToInt32(themeValue);
+                }
+            }
+            UpdateLanguage();
+            ApplyTheme();
+        }
+
+        public void UpdateLanguage()
+        {
+            this.Text = "SSH VPN";
+            btnOpenSettings.Text = LanguageManager.GetString("OpenSettings");
+            lblSponsor.Text = LanguageManager.CurrentLanguage == LanguageManager.Language.Farsi ? "حمایت شده توسط Movti Group" : "Supported by Movti Group";
+
+            if (sshClient.IsConnected)
+            {
+                btnToggle.Text = LanguageManager.GetString("Disconnect");
+                lblStatus.Text = LanguageManager.GetString("Connected") + "      " + GetTimeString();
+            }
+            else
+            {
+                btnToggle.Text = LanguageManager.GetString("Connect");
+                if (btnToggle.Text == "Connect" || btnToggle.Text == "اتصال")
+                    lblStatus.Text = LanguageManager.GetString("NotConnected");
+            }
+
+            if (LanguageManager.CurrentLanguage == LanguageManager.Language.Farsi)
+            {
+                this.RightToLeft = RightToLeft.Yes;
+                this.RightToLeftLayout = true;
+                lblPing.TextAlign = ContentAlignment.TopLeft;
+            }
+            else
+            {
+                this.RightToLeft = RightToLeft.No;
+                this.RightToLeftLayout = false;
+                lblPing.TextAlign = ContentAlignment.TopRight;
+            }
+        }
+
+        private void ApplyTheme()
+        {
+            var colors = ThemeManager.GetColors();
+            this.BackColor = colors.Background;
+            this.ForeColor = colors.Foreground;
+
+            btnToggle.BackColor = colors.ControlBack;
+            btnToggle.ForeColor = colors.ControlFore;
+            btnToggle.FlatAppearance.BorderColor = colors.Accent;
+
+            btnOpenSettings.BackColor = colors.ControlBack;
+            btnOpenSettings.ForeColor = colors.ControlFore;
+            btnOpenSettings.FlatAppearance.BorderColor = colors.Accent;
+
+            lblSponsor.ForeColor = colors.Foreground;
+            lblPing.ForeColor = colors.Foreground;
+
+            if (!sshClient.IsConnected)
+            {
+                lblStatus.BackColor = colors.Error;
+            }
+            else
+            {
+                lblStatus.BackColor = colors.Success;
+            }
+            lblStatus.ForeColor = Color.White;
+        }
+
+        private string GetTimeString()
+        {
+            int hours = seconds / 3600;
+            int minutes = (seconds % 3600) / 60;
+            int remainingSeconds = seconds % 60;
+            return hours.ToString("D2") + ":" + minutes.ToString("D2") + ":" + remainingSeconds.ToString("D2");
+        }
+
 
         void Connect()
         {
-            btnToggle.Text = "Connecting...";
+            btnToggle.Text = LanguageManager.GetString("Connecting");
+            var colors = ThemeManager.GetColors();
 
             string password = registery_get_data("password");
             string username = registery_get_data("username");
@@ -32,13 +123,13 @@ namespace ssh_vpn
 
             if (!int.TryParse(registery_get_data("port"), out port)) port = 22;
 
-            if (password == "" || password == "" || username == "" || ip == "")
+            if (password == "" || username == "" || ip == "")
             {
-                MessageBox.Show("Error : You should set SSH server settings...", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(LanguageManager.GetString("ErrorSettings"), LanguageManager.GetString("ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Invoke((MethodInvoker)delegate
                 {
                     btnOpenSettings_Click(null, null);
-                    btnToggle.Text = "Connect";
+                    btnToggle.Text = LanguageManager.GetString("Connect");
                 });
                 return;
             }
@@ -58,9 +149,9 @@ namespace ssh_vpn
 
                     Invoke((MethodInvoker)delegate
                     {
-                        lblStatus.BackColor = Color.Green;
-                        lblStatus.Text = "Connected      00:00:00";
-                        btnToggle.Text = "Disconnect";
+                        lblStatus.BackColor = colors.Success;
+                        lblStatus.Text = LanguageManager.GetString("Connected") + "      00:00:00";
+                        btnToggle.Text = LanguageManager.GetString("Disconnect");
 
                         timer_check_status.Enabled = true;
                         timer_check_status.Start();
@@ -68,8 +159,8 @@ namespace ssh_vpn
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error : " + ex.Message, "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    Invoke((MethodInvoker)delegate { btnToggle.Text = "Connect"; });
+                    MessageBox.Show(LanguageManager.GetString("ErrorTitle") + " : " + ex.Message, LanguageManager.GetString("ConnectionErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Invoke((MethodInvoker)delegate { btnToggle.Text = LanguageManager.GetString("Connect"); });
                 }
                 finally
                 {
@@ -80,15 +171,17 @@ namespace ssh_vpn
 
         void Disconnect()
         {
-            btnToggle.Text = "Disconnecting...";
+            btnToggle.Text = LanguageManager.GetString("Disconnecting");
+            var colors = ThemeManager.GetColors();
 
             portForwarded.Stop();
             sshClient.Disconnect();
             unset_windows_proxy();
 
-            btnToggle.Text = "Connect";
-            lblStatus.BackColor = Color.Red;
-            lblStatus.Text = "Not Connected";
+            btnToggle.Text = LanguageManager.GetString("Connect");
+            lblStatus.BackColor = colors.Error;
+            lblStatus.Text = LanguageManager.GetString("NotConnected");
+            lblPing.Text = "Ping: --- ms";
 
             timer_check_status.Enabled = false;
             timer_check_status.Stop();
@@ -116,7 +209,7 @@ namespace ssh_vpn
         {
             if (!sshClient.IsConnected) return;
 
-            DialogResult result = MessageBox.Show("Do you really wish to exit? the connection will be stopped.", "Exit Program?", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            DialogResult result = MessageBox.Show(LanguageManager.GetString("ExitConfirm"), LanguageManager.GetString("ExitTitle"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (result == DialogResult.No)
                 e.Cancel = true;
             else
@@ -135,6 +228,7 @@ namespace ssh_vpn
         {
             SettingsForm settingsForm = new SettingsForm();
             settingsForm.ShowDialog();
+            LoadSettings();
         }
 
         bool back_status = false;
@@ -151,19 +245,57 @@ namespace ssh_vpn
             else if (sshClient.IsConnected && sshClient.IsConnected != back_status)
             {
                 seconds = 0;
-                lblStatus.Text = "Connected      00:00:00";
+                lblStatus.Text = LanguageManager.GetString("Connected") + "      00:00:00";
             }
             else if (sshClient.IsConnected)
             { 
                 seconds++;
+                lblStatus.Text = LanguageManager.GetString("Connected") + "      " + GetTimeString();
 
-                int hours = seconds / 3600;
-                int minutes = (seconds % 3600) / 60;
-                int remainingSeconds = seconds % 60;
-                lblStatus.Text = "Connected      " + hours.ToString("D2") + ":" + minutes.ToString("D2") + ":" + remainingSeconds.ToString("D2");
+                // Update Ping every 5 seconds
+                if (seconds % 5 == 0)
+                {
+                    UpdatePing();
+                }
             }
 
             back_status = sshClient.IsConnected;
+        }
+
+        private void UpdatePing()
+        {
+            string ip = registery_get_data("ip");
+            if (string.IsNullOrEmpty(ip)) return;
+
+            ThreadPool.QueueUserWorkItem((state) =>
+            {
+                try
+                {
+                    Ping ping = new Ping();
+                    PingReply reply = ping.Send(ip, 2000);
+                    if (reply.Status == IPStatus.Success)
+                    {
+                        Invoke((MethodInvoker)delegate
+                        {
+                            lblPing.Text = "Ping: " + reply.RoundtripTime + " ms";
+                        });
+                    }
+                    else
+                    {
+                        Invoke((MethodInvoker)delegate
+                        {
+                            lblPing.Text = "Ping: Timeout";
+                        });
+                    }
+                }
+                catch
+                {
+                    Invoke((MethodInvoker)delegate
+                    {
+                        lblPing.Text = "Ping: Error";
+                    });
+                }
+            });
         }
 
         private void set_windows_proxy()
@@ -197,7 +329,7 @@ namespace ssh_vpn
 
         private void btnGh_Click(object sender, EventArgs e)
         {
-            Process.Start("https://github.com/omidmousavi/csharp-ssh-vpn");
+            Process.Start("https://github.com/tahatehran/CSharp-SSH-VPN");
         }
     }
 

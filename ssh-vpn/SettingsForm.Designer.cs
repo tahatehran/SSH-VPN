@@ -1,4 +1,4 @@
-﻿namespace ssh_vpn
+namespace ssh_vpn
 {
     partial class SettingsForm
     {
@@ -30,14 +30,18 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SettingsForm));
             this.txt_ip = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
+            this.lblIp = new System.Windows.Forms.Label();
+            this.lblUser = new System.Windows.Forms.Label();
             this.txt_username = new System.Windows.Forms.TextBox();
-            this.label3 = new System.Windows.Forms.Label();
+            this.lblPass = new System.Windows.Forms.Label();
             this.txt_password = new System.Windows.Forms.TextBox();
             this.btn_save = new System.Windows.Forms.Button();
             this.txt_port = new System.Windows.Forms.NumericUpDown();
-            this.label4 = new System.Windows.Forms.Label();
+            this.lblPort = new System.Windows.Forms.Label();
+            this.cmbLang = new System.Windows.Forms.ComboBox();
+            this.lblLang = new System.Windows.Forms.Label();
+            this.cmbTheme = new System.Windows.Forms.ComboBox();
+            this.lblTheme = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.txt_port)).BeginInit();
             this.SuspendLayout();
             // 
@@ -48,23 +52,23 @@
             this.txt_ip.Size = new System.Drawing.Size(187, 20);
             this.txt_ip.TabIndex = 0;
             // 
-            // label1
+            // lblIp
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 15);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(67, 13);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "IP Address : ";
+            this.lblIp.AutoSize = true;
+            this.lblIp.Location = new System.Drawing.Point(12, 15);
+            this.lblIp.Name = "lblIp";
+            this.lblIp.Size = new System.Drawing.Size(67, 13);
+            this.lblIp.TabIndex = 1;
+            this.lblIp.Text = "IP Address : ";
             // 
-            // label2
+            // lblUser
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 68);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(64, 13);
-            this.label2.TabIndex = 3;
-            this.label2.Text = "Username : ";
+            this.lblUser.AutoSize = true;
+            this.lblUser.Location = new System.Drawing.Point(12, 68);
+            this.lblUser.Name = "lblUser";
+            this.lblUser.Size = new System.Drawing.Size(64, 13);
+            this.lblUser.TabIndex = 3;
+            this.lblUser.Text = "Username : ";
             // 
             // txt_username
             // 
@@ -73,14 +77,14 @@
             this.txt_username.Size = new System.Drawing.Size(187, 20);
             this.txt_username.TabIndex = 2;
             // 
-            // label3
+            // lblPass
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(12, 94);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(62, 13);
-            this.label3.TabIndex = 5;
-            this.label3.Text = "Password : ";
+            this.lblPass.AutoSize = true;
+            this.lblPass.Location = new System.Drawing.Point(12, 94);
+            this.lblPass.Name = "lblPass";
+            this.lblPass.Size = new System.Drawing.Size(62, 13);
+            this.lblPass.TabIndex = 5;
+            this.lblPass.Text = "Password : ";
             // 
             // txt_password
             // 
@@ -91,7 +95,7 @@
             // 
             // btn_save
             // 
-            this.btn_save.Location = new System.Drawing.Point(12, 117);
+            this.btn_save.Location = new System.Drawing.Point(12, 185);
             this.btn_save.Name = "btn_save";
             this.btn_save.Size = new System.Drawing.Size(260, 39);
             this.btn_save.TabIndex = 6;
@@ -116,32 +120,80 @@
             0,
             0});
             // 
-            // label4
+            // lblPort
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(12, 42);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(65, 13);
-            this.label4.TabIndex = 8;
-            this.label4.Text = "Server port :";
+            this.lblPort.AutoSize = true;
+            this.lblPort.Location = new System.Drawing.Point(12, 42);
+            this.lblPort.Name = "lblPort";
+            this.lblPort.Size = new System.Drawing.Size(65, 13);
+            this.lblPort.TabIndex = 8;
+            this.lblPort.Text = "Server port :";
+            //
+            // cmbLang
+            //
+            this.cmbLang.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbLang.FormattingEnabled = true;
+            this.cmbLang.Items.AddRange(new object[] {
+            "English",
+            "Farsi"});
+            this.cmbLang.Location = new System.Drawing.Point(85, 120);
+            this.cmbLang.Name = "cmbLang";
+            this.cmbLang.Size = new System.Drawing.Size(187, 21);
+            this.cmbLang.TabIndex = 10;
+            this.cmbLang.SelectedIndexChanged += new System.EventHandler(this.cmbLang_SelectedIndexChanged);
+            //
+            // lblLang
+            //
+            this.lblLang.AutoSize = true;
+            this.lblLang.Location = new System.Drawing.Point(12, 123);
+            this.lblLang.Name = "lblLang";
+            this.lblLang.Size = new System.Drawing.Size(61, 13);
+            this.lblLang.TabIndex = 11;
+            this.lblLang.Text = "Language :";
+            //
+            // cmbTheme
+            //
+            this.cmbTheme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbTheme.FormattingEnabled = true;
+            this.cmbTheme.Items.AddRange(new object[] {
+            "Light",
+            "Dark"});
+            this.cmbTheme.Location = new System.Drawing.Point(85, 147);
+            this.cmbTheme.Name = "cmbTheme";
+            this.cmbTheme.Size = new System.Drawing.Size(187, 21);
+            this.cmbTheme.TabIndex = 12;
+            this.cmbTheme.SelectedIndexChanged += new System.EventHandler(this.cmbTheme_SelectedIndexChanged);
+            //
+            // lblTheme
+            //
+            this.lblTheme.AutoSize = true;
+            this.lblTheme.Location = new System.Drawing.Point(12, 150);
+            this.lblTheme.Name = "lblTheme";
+            this.lblTheme.Size = new System.Drawing.Size(46, 13);
+            this.lblTheme.TabIndex = 13;
+            this.lblTheme.Text = "Theme :";
             // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.ClientSize = new System.Drawing.Size(286, 172);
+            this.ClientSize = new System.Drawing.Size(286, 235);
+            this.Controls.Add(this.lblTheme);
+            this.Controls.Add(this.cmbTheme);
+            this.Controls.Add(this.lblLang);
+            this.Controls.Add(this.cmbLang);
             this.Controls.Add(this.txt_port);
-            this.Controls.Add(this.label4);
+            this.Controls.Add(this.lblPort);
             this.Controls.Add(this.btn_save);
-            this.Controls.Add(this.label3);
+            this.Controls.Add(this.lblPass);
             this.Controls.Add(this.txt_password);
-            this.Controls.Add(this.label2);
+            this.Controls.Add(this.lblUser);
             this.Controls.Add(this.txt_username);
-            this.Controls.Add(this.label1);
+            this.Controls.Add(this.lblIp);
             this.Controls.Add(this.txt_ip);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject(".Icon")));
             this.MaximizeBox = false;
             this.Name = "SettingsForm";
             this.Text = "Settings";
@@ -155,13 +207,17 @@
         #endregion
 
         private System.Windows.Forms.TextBox txt_ip;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label lblIp;
+        private System.Windows.Forms.Label lblUser;
         private System.Windows.Forms.TextBox txt_username;
-        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label lblPass;
         private System.Windows.Forms.TextBox txt_password;
         private System.Windows.Forms.Button btn_save;
         private System.Windows.Forms.NumericUpDown txt_port;
-        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label lblPort;
+        private System.Windows.Forms.ComboBox cmbLang;
+        private System.Windows.Forms.Label lblLang;
+        private System.Windows.Forms.ComboBox cmbTheme;
+        private System.Windows.Forms.Label lblTheme;
     }
 }
