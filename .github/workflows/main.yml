@@ -1,0 +1,91 @@
+name: SSH VPN Pipeline
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: 'URL of the video to download (Optional)'
+        required: false
+        default: ''
+
+jobs:
+  # Job 1: Build the C# Windows Application
+  build:
+    name: Build Application
+    runs-on: windows-latest
+    env:
+      Solution_Name: ssh-vpn.sln
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Restore NuGet Packages
+      run: nuget restore $env:Solution_Name
+
+    - name: Build the solution (Release)
+      run: msbuild $env:Solution_Name /p:Configuration=Release
+
+    - name: Upload Release Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ssh-vpn-release
+        path: ssh-vpn/bin/Release
+
+  # Job 2: Video Downloader (Consolidated and Fixed)
+  # This job handles the video download request and fixes the 127 error by installing yt-dlp
+  video-download:
+    name: Video Downloader
+    runs-on: ubuntu-latest
+    # Only run if triggered manually with a URL, or if someone wants to test the downloader
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.video_url != ''
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install yt-dlp & Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pip ffmpeg
+        sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+        sudo chmod a+rx /usr/local/bin/yt-dlp
+        yt-dlp --version # Verify installation (prevents 127 error)
+
+    - name: Download Video
+      run: |
+        mkdir -p downloads
+        yt-dlp "${{ github.event.inputs.video_url }}" -o "downloads/%(title)s.%(ext)s"
+
+    - name: Upload Downloaded Video
+      uses: actions/upload-artifact@v4
+      with:
+        name: downloaded-video
+        path: downloads/
+
+  # Job 3: Unified Cleanup
+  cleanup:
+    name: Unified Cleanup
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: always() # Run even if build fails to ensure workspace is clean
+    steps:
+    - name: Purge Temporary Files
+      run: |
+        echo "Cleaning up temporary build artifacts and logs..."
+        # In a real runner, the environment is ephemeral, but this is a placeholder
+        # for any specific cleanup logic requested.
