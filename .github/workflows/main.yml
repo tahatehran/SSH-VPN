@@ -37,14 +37,31 @@ jobs:
     - name: Restore NuGet Packages
       run: nuget restore $env:Solution_Name
 
-    - name: Build the solution (Release)
-      run: msbuild $env:Solution_Name /p:Configuration=Release
+    - name: Build the solution (Release x64)
+      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64
+
+    - name: Package Release
+      shell: pwsh
+      run: |
+        Compress-Archive -Path ssh-vpn/bin/x64/Release/* -DestinationPath ssh-vpn-x64.zip
 
     - name: Upload Release Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: ssh-vpn-release
-        path: ssh-vpn/bin/Release
+        path: ssh-vpn-x64.zip
+
+    - name: Create Release
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ssh-vpn-x64.zip
+        tag_name: v1.0.${{ github.run_number }}
+        name: Release v1.0.${{ github.run_number }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Job 2: Video Downloader (Consolidated and Fixed)
   # This job handles the video download request and fixes the 127 error by installing yt-dlp
