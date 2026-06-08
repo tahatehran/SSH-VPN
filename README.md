@@ -1,62 +1,63 @@
-# SSH VPN (C#)
+# 🛡️ SSH VPN (C#)
 
-<div dir="rtl">
+[![Build Status](https://github.com/tahatehran/CSharp-SSH-VPN/actions/workflows/main.yml/badge.svg)](https://github.com/tahatehran/CSharp-SSH-VPN/actions/workflows/main.yml)
+[![Release](https://img.shields.io/github/v/release/tahatehran/CSharp-SSH-VPN?include_prereleases)](https://github.com/tahatehran/CSharp-SSH-VPN/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## توضیحات (Persian)
-این یک برنامه حرفه‌ای برای استفاده از پروتکل SSH به عنوان VPN است. این برنامه با ایجاد یک تونل SSH روی پورت 9000 و تنظیم خودکار پروکسی ویندوز، دسترسی آزاد به اینترنت را فراهم می‌کند.
-
-## ویژگی‌های کلیدی
-- **رابط کاربری مدرن**: پشتیبانی از حالت تاریک و روشن (Dark/Light Mode).
-- **دو زبانه**: پشتیبانی کامل از زبان‌های فارسی و انگلیسی.
-- **اتصال سریع**: بهینه‌سازی شده برای تونل‌زنی SSH.
-- **تنظیم خودکار پروکسی**: پیکربندی خودکار تنظیمات پروکسی ویندوز.
-- **خودکارسازی (CI/CD)**: مجهز به GitHub Actions برای ساخت خودکار و ابزارهای جانبی.
-
-</div>
+A professional-grade Windows application built with C# that leverages the SSH protocol to provide a secure VPN/Tunneling experience. By establishing an encrypted SSH tunnel and automatically configuring system-wide proxy settings, it ensures private and unrestricted internet access.
 
 ---
 
-## Description (English)
-A professional C# Windows application to use the SSH protocol as a VPN. It establishes an SSH session on port 9000 and automatically configures the local Windows proxy settings for seamless browsing.
-
 ## 🚀 Key Features
-- **Modern UI**: Sleek design with Dark/Light mode support.
-- **Bilingual**: Full support for English and Farsi (Persian).
-- **Fast Connection**: Optimized SSH tunneling for better performance.
-- **Auto Proxy**: Automatically handles Windows system proxy configuration.
-- **Integrated CI/CD**: Powered by GitHub Actions for automated building and maintenance.
+
+- **🎨 Modern UI/UX**: Clean, flat design with a focus on usability and aesthetics.
+- **🌓 Adaptive Theme**: Full support for both **Dark** and **Light** modes to match your system preference.
+- **🌍 Bilingual Support**: Seamlessly switch between **English** and **Farsi (Persian)**.
+- **⚡ High Performance**: Optimized SSH tunneling on port 9000 for low-latency connections.
+- **🛠️ Zero Configuration**: Automatically handles Windows SOCKS5 proxy settings upon connection.
+- **🤖 Integrated CI/CD**: Powered by GitHub Actions for automated builds, testing, and release management.
 
 ## 📸 Screenshots
-![Main Interface](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/12b72ac7-92f6-47be-bdd5-abcabfc9458c)
-![Settings](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/21a80309-2760-46df-b94c-bab82cce845d)
 
-## ⚙️ GitHub Actions (Workflows)
-We have a unified and robust CI/CD pipeline in `.github/workflows/main.yml`:
-1.  **Build Application**: Automatically builds the C# solution and generates Release artifacts.
-2.  **Video Downloader**: A powerful utility to download videos via `yt-dlp` (Manual trigger via `workflow_dispatch`).
-3.  **Automatic Cleanup**: Ensures the environment stays clean after each run.
+| Connection Interface | Settings & Configuration |
+| :---: | :---: |
+| ![Main Interface](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/12b72ac7-92f6-47be-bdd5-abcabfc9458c) | ![Settings](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/21a80309-2760-46df-b94c-bab82cce845d) |
 
-**To run the Video Downloader:**
-Go to the **Actions** tab -> Select **SSH VPN Pipeline** -> Click **Run workflow** -> Enter the Video URL.
+## ⚙️ Advanced Automation (Workflows)
 
-## 🛠 Project Roadmap (Phases)
-- **Phase 1**: Core functionality and basic UI (Completed)
-- **Phase 2**: Modern UI/UX overhaul, Dark Mode, and Animations (Completed)
-- **Phase 3**: Localization (EN/FA) and CI/CD Integration (Completed)
-- **Phase 4**: Advanced features like Server List, Ping detection, and Speed monitoring (Planned)
+This repository features a unified CI/CD pipeline (`.github/workflows/main.yml`) that handles:
 
-## 🤝 Support & Sponsorship
+1.  **Continuous Integration**: Automated MSBuild process for every push/PR targeting .NET Framework 4.8.
+2.  **Release Management**: Automatic generation of versioned x64 ZIP artifacts for production.
+3.  **Video Utility**: A built-in `yt-dlp` powered downloader accessible via the Actions tab.
+
+> [!TIP]
+> To use the **Video Downloader**: Navigate to **Actions** -> **SSH VPN Pipeline** -> **Run workflow** -> Enter your URL.
+
+## 🛠 Project Roadmap
+
+- [x] **Phase 1**: Core SSH tunneling engine and basic Windows Forms UI.
+- [x] **Phase 2**: UI/UX overhaul with custom themes and animations.
+- [x] **Phase 3**: Multi-language support (EN/FA) and CI/CD pipeline setup.
+- [ ] **Phase 4**: Server list management, real-time ping detection, and bandwidth monitoring.
+
+## 🛡️ Security & Development
+
+- **Configuration**: Sensitive fields like SSH passwords are currently stored in the Windows Registry.
+- **AES Encryption**: A security update to encrypt stored credentials is in development.
+- **Guidelines**: Contributors should refer to [AGENT.md](./AGENT.md) for coding standards.
+
+## 📥 Download & Installation
+
+1.  Go to the [Releases](https://github.com/tahatehran/CSharp-SSH-VPN/releases) page.
+2.  Download the latest `ssh-vpn-x64.zip`.
+3.  Extract and run `ssh-vpn.exe`.
+4.  Configure your SSH server details in the settings.
+
+---
+
+### 🤝 Support & Sponsorship
+Developed and maintained by [tahatehran](https://github.com/tahatehran).
 Supported by **Movti Group**.
-Maintained by [tahatehran](https://github.com/tahatehran)
 
-## 📥 Download
-| Version | Download |
-|---------|----------|
-| Latest Release | [Download Here](https://github.com/tahatehran/CSharp-SSH-VPN/releases) |
-
-## 🛡 Security & Guidelines
-- **Credentials**: Check [PASS.md](./PASS.md) for info on how settings are stored.
-- **Development**: Refer to [AGENT.md](./AGENT.md) for coding standards and AI instructions.
-
-## Learn more
-For more information about filtering and bypass techniques, visit [Hope Project](https://github.com/iranxray/hope).
+For more information on internet freedom tools, check out the [Hope Project](https://github.com/iranxray/hope).
