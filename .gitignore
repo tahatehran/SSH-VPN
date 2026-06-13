@@ -1,0 +1,59 @@
+# Build results
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.appx
+*.appxupload
+*.msi
+*.publish/
+
+# Visual Studio
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet
+packages/
+*.nupkg
+packages.config
+
+# Resharper
+*.DotSettings.user
+
+# InstallShield
+*.ish
+*.msi
+*.msp
+*.mst
+
+# Visual C++
+*.sbr
+*.bsc
+
+# Visual Studio Code
+.vscode/
+
+# Rider
+.idea/
+
+# Backup and temporary files
+*~
+*.tmp
+*.temp
+*.log
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Build artifacts
+build/
+dist/
+*.rar
+*.zip
