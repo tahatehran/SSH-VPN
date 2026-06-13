@@ -7,7 +7,7 @@ namespace ssh_vpn
         public enum Language { English, Farsi }
         public static Language CurrentLanguage = Language.English;
 
-        private static Dictionary<string, Dictionary<Language, string>> translations = new Dictionary<Language, Dictionary<Language, string>>
+        private static Dictionary<string, Dictionary<Language, string>> translations = new Dictionary<string, Dictionary<Language, string>>
         {
             ["Connect"] = new Dictionary<Language, string> { [Language.English] = "Connect", [Language.Farsi] = "اتصال" },
             ["Disconnect"] = new Dictionary<Language, string> { [Language.English] = "Disconnect", [Language.Farsi] = "قطع اتصال" },
