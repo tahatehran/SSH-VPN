@@ -33,6 +33,14 @@ namespace ssh_vpn
             ["Theme"] = new Dictionary<Language, string> { [Language.English] = "Theme :", [Language.Farsi] = "پوسته :" },
             ["Light"] = new Dictionary<Language, string> { [Language.English] = "Light", [Language.Farsi] = "روشن" },
             ["Dark"] = new Dictionary<Language, string> { [Language.English] = "Dark", [Language.Farsi] = "تاریک" },
+            ["ServerList"] = new Dictionary<Language, string> { [Language.English] = "Server List", [Language.Farsi] = "فهرست سرورها" },
+            ["AddServer"] = new Dictionary<Language, string> { [Language.English] = "Add Server", [Language.Farsi] = "افزودن سرور" },
+            ["EditServer"] = new Dictionary<Language, string> { [Language.English] = "Edit Server", [Language.Farsi] = "ویرایش سرور" },
+            ["DeleteServer"] = new Dictionary<Language, string> { [Language.English] = "Delete Server", [Language.Farsi] = "حذف سرور" },
+            ["ServerName"] = new Dictionary<Language, string> { [Language.English] = "Server Name :", [Language.Farsi] = "نام سرور :" },
+            ["SelectServer"] = new Dictionary<Language, string> { [Language.English] = "Select a server from the list", [Language.Farsi] = "یک سرور از فهرست انتخاب کنید" },
+            ["Bandwidth"] = new Dictionary<Language, string> { [Language.English] = "Bandwidth", [Language.Farsi] = "پهنای باند" },
+            ["Ping"] = new Dictionary<Language, string> { [Language.English] = "Ping", [Language.Farsi] = "پینگ" },
         };
 
         public static string GetString(string key)

@@ -1,13 +1,15 @@
 # Build results
 bin/
 obj/
-*.exe
 *.dll
 *.pdb
 *.appx
 *.appxupload
 *.msi
 *.publish/
+# Ignore built application exe but not installer
+ssh-vpn/bin/
+ssh-vpn/obj/
 
 # Visual Studio
 .vs/

@@ -21,6 +21,7 @@ namespace ssh_vpn
 
         SshClient sshClient = new SshClient("0.0.0.0", 22, "0000", "0000");
         ForwardedPortDynamic portForwarded = new ForwardedPortDynamic(9000);
+        private BandwidthMonitor bandwidthMonitor;
 
         private void LoadSettings()
         {
@@ -155,6 +156,16 @@ namespace ssh_vpn
 
                         timer_check_status.Enabled = true;
                         timer_check_status.Start();
+
+                        // Start bandwidth monitoring
+                        if (bandwidthMonitor == null)
+                        {
+                            bandwidthMonitor = new BandwidthMonitor();
+                            bandwidthMonitor.BandwidthUpdated += (status) => {
+                                lblBandwidth.Text = status;
+                            };
+                        }
+                        bandwidthMonitor.StartMonitoring();
                     });
                 }
                 catch (Exception ex)
@@ -182,10 +193,16 @@ namespace ssh_vpn
             lblStatus.BackColor = colors.Error;
             lblStatus.Text = LanguageManager.GetString("NotConnected");
             lblPing.Text = "Ping: --- ms";
+            lblBandwidth.Text = "Bandwidth: 0 KB/s";
 
             timer_check_status.Enabled = false;
             timer_check_status.Stop();
             seconds = 0;
+
+            if (bandwidthMonitor != null)
+            {
+                bandwidthMonitor.Reset();
+            }
 
             btnToggle.Enabled = true;
         }
@@ -229,6 +246,16 @@ namespace ssh_vpn
             SettingsForm settingsForm = new SettingsForm();
             settingsForm.ShowDialog();
             LoadSettings();
+        }
+
+        private void btnServerList_Click(object sender, EventArgs e)
+        {
+            ServerListForm serverListForm = new ServerListForm();
+            if (serverListForm.ShowDialog() == DialogResult.OK)
+            {
+                // Server was selected and connected
+                LoadSettings();
+            }
         }
 
         bool back_status = false;

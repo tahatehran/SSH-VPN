@@ -16,6 +16,9 @@ A professional-grade Windows application built with C# that leverages the SSH pr
 - **⚡ High Performance**: Optimized SSH tunneling on port 9000 for low-latency connections.
 - **🛠️ Zero Configuration**: Automatically handles Windows SOCKS5 proxy settings upon connection.
 - **🤖 Integrated CI/CD**: Powered by GitHub Actions for automated builds, testing, and release management.
+- **📋 Server List Management**: Save and manage multiple SSH server configurations.
+- **📊 Real-time Ping Detection**: Monitor server latency with live ping updates.
+- **📈 Bandwidth Monitoring**: Track download/upload traffic in real-time.
 
 ## 📸 Screenshots
 
@@ -39,7 +42,7 @@ This repository features a unified CI/CD pipeline (`.github/workflows/main.yml`)
 - [x] **Phase 1**: Core SSH tunneling engine and basic Windows Forms UI.
 - [x] **Phase 2**: UI/UX overhaul with custom themes and animations.
 - [x] **Phase 3**: Multi-language support (EN/FA) and CI/CD pipeline setup.
-- [ ] **Phase 4**: Server list management, real-time ping detection, and bandwidth monitoring.
+- [x] **Phase 4**: Server list management, real-time ping detection, and bandwidth monitoring.
 
 ## 🛡️ Security & Development
 
@@ -50,9 +53,10 @@ This repository features a unified CI/CD pipeline (`.github/workflows/main.yml`)
 ## 📥 Download & Installation
 
 1.  Go to the [Releases](https://github.com/tahatehran/CSharp-SSH-VPN/releases) page.
-2.  Download the latest `ssh-vpn-x64.zip`.
-3.  Extract and run `ssh-vpn.exe`.
+2.  Download the latest `ssh-vpn-setup.exe` (Installer) or `ssh-vpn-x64.zip`.
+3.  Run the installer or extract the ZIP and run `ssh-vpn.exe`.
 4.  Configure your SSH server details in the settings.
+5.  Use the server list to manage multiple connections.
 
 ---
 

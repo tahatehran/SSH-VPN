@@ -72,14 +72,29 @@ namespace ssh_vpn
             this.btnOpenSettings.FlatAppearance.BorderSize = 1;
             this.btnOpenSettings.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnOpenSettings.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnOpenSettings.Location = new System.Drawing.Point(73, 161);
+            this.btnOpenSettings.Location = new System.Drawing.Point(12, 161);
             this.btnOpenSettings.Name = "btnOpenSettings";
-            this.btnOpenSettings.Size = new System.Drawing.Size(199, 52);
+            this.btnOpenSettings.Size = new System.Drawing.Size(120, 52);
             this.btnOpenSettings.TabIndex = 1;
             this.btnOpenSettings.Text = "Open Settings";
             this.btnOpenSettings.UseVisualStyleBackColor = true;
             this.btnOpenSettings.Click += new System.EventHandler(this.btnOpenSettings_Click);
-            // 
+            //
+            // btnServerList
+            //
+            this.btnServerList = new System.Windows.Forms.Button();
+            this.btnServerList.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnServerList.FlatAppearance.BorderSize = 1;
+            this.btnServerList.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnServerList.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnServerList.Location = new System.Drawing.Point(142, 161);
+            this.btnServerList.Name = "btnServerList";
+            this.btnServerList.Size = new System.Drawing.Size(130, 52);
+            this.btnServerList.TabIndex = 10;
+            this.btnServerList.Text = "Server List";
+            this.btnServerList.UseVisualStyleBackColor = true;
+            this.btnServerList.Click += new System.EventHandler(this.btnServerList_Click);
+            //
             // timer_check_status
             // 
             this.timer_check_status.Interval = 1000;
@@ -140,17 +155,30 @@ namespace ssh_vpn
             this.lblPing.Text = "Ping: --- ms";
             this.lblPing.TextAlign = System.Drawing.ContentAlignment.TopRight;
             //
+            // lblBandwidth
+            //
+            this.lblBandwidth = new System.Windows.Forms.Label();
+            this.lblBandwidth.AutoSize = true;
+            this.lblBandwidth.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblBandwidth.Location = new System.Drawing.Point(12, 235);
+            this.lblBandwidth.Name = "lblBandwidth";
+            this.lblBandwidth.Size = new System.Drawing.Size(100, 13);
+            this.lblBandwidth.TabIndex = 9;
+            this.lblBandwidth.Text = "Bandwidth: 0 KB/s";
+            //
             // Form1
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.ClientSize = new System.Drawing.Size(283, 242);
+            this.ClientSize = new System.Drawing.Size(283, 260);
             this.Controls.Add(this.lblPing);
             this.Controls.Add(this.lblSponsor);
+            this.Controls.Add(this.lblBandwidth);
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.btnGh);
             this.Controls.Add(this.btnOpenSettings);
+            this.Controls.Add(this.btnServerList);
             this.Controls.Add(this.githubLink);
             this.Controls.Add(this.btnToggle);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject(".Icon")));
@@ -166,6 +194,7 @@ namespace ssh_vpn
         #endregion
         private System.Windows.Forms.LinkLabel githubLink;
         private System.Windows.Forms.Button btnOpenSettings;
+        private System.Windows.Forms.Button btnServerList;
         private System.Windows.Forms.Timer timer_check_status;
         private System.Windows.Forms.NotifyIcon notifyIcon1;
         private System.Windows.Forms.Button btnGh;
@@ -173,5 +202,6 @@ namespace ssh_vpn
         public System.Windows.Forms.Button btnToggle;
         private System.Windows.Forms.Label lblSponsor;
         private System.Windows.Forms.Label lblPing;
+        private System.Windows.Forms.Label lblBandwidth;
     }
 }
