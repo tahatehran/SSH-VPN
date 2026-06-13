@@ -47,7 +47,9 @@ namespace ssh_vpn
 
             ServerName = txtName.Text;
             IPAddress = txtIP.Text;
-            if (!int.TryParse(txtPort.Text, out Port)) Port = 22;
+            int port;
+            if (!int.TryParse(txtPort.Text, out port)) port = 22;
+            Port = port;
             Username = txtUsername.Text;
             Password = txtPassword.Text;
 
