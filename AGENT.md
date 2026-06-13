@@ -15,7 +15,7 @@ This is a C# Windows Forms application that provides SSH VPN functionality by es
 - **Modernization**: Focus on smooth transitions, consistent padding, and modern color palettes.
 
 ## CI/CD
-- The project uses GitHub Actions for building and packaging. See `.github/workflows/dotnet-desktop.yml`.
+- The project uses GitHub Actions for building and packaging. See `.github/workflows/main.yml`.
 
 ## Contribution
 Always update the Roadmap in `README.md` when completing major features.

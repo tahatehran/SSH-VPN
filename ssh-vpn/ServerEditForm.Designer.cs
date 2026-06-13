@@ -119,40 +119,52 @@ namespace ssh_vpn
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
+            // btnCancel
+            // 
+            this.btnCancel.Location = new System.Drawing.Point(181, 231);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(75, 23);
+            this.btnCancel.TabIndex = 11;
+            this.btnCancel.Text = "Cancel";
+            this.btnCancel.UseVisualStyleBackColor = true;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
+            // 
             // ServerEditForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(282, 261);
-            this.Controls.Add(this.btnSave);
-            this.Controls.Add(this.txtPassword);
-            this.Controls.Add(this.lblPassword);
-            this.Controls.Add(this.txtUsername);
-            this.Controls.Add(this.lblUsername);
-            this.Controls.Add(this.txtPort);
-            this.Controls.Add(this.lblPort);
-            this.Controls.Add(this.txtIP);
-            this.Controls.Add(this.lblIP);
-            this.Controls.Add(this.txtName);
-            this.Controls.Add(this.lblName);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.Name = "ServerEditForm";
-            this.Text = "Server Edit";
-            this.ResumeLayout(false);
-            this.PerformLayout();
-        }
+            this.Controls.Add(this.btnCancel);
+             this.Controls.Add(this.btnSave);
+             this.Controls.Add(this.txtPassword);
+             this.Controls.Add(this.lblPassword);
+             this.Controls.Add(this.txtUsername);
+             this.Controls.Add(this.lblUsername);
+             this.Controls.Add(this.txtPort);
+             this.Controls.Add(this.lblPort);
+             this.Controls.Add(this.txtIP);
+             this.Controls.Add(this.lblIP);
+             this.Controls.Add(this.txtName);
+             this.Controls.Add(this.lblName);
+             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+             this.MaximizeBox = false;
+             this.Name = "ServerEditForm";
+             this.Text = "Server Edit";
+             this.ResumeLayout(false);
+             this.PerformLayout();
+         }
 
-        private System.Windows.Forms.Label lblName;
-        private System.Windows.Forms.TextBox txtName;
-        private System.Windows.Forms.Label lblIP;
-        private System.Windows.Forms.TextBox txtIP;
-        private System.Windows.Forms.Label lblPort;
-        private System.Windows.Forms.TextBox txtPort;
-        private System.Windows.Forms.Label lblUsername;
-        private System.Windows.Forms.TextBox txtUsername;
-        private System.Windows.Forms.Label lblPassword;
-        private System.Windows.Forms.TextBox txtPassword;
-        private System.Windows.Forms.Button btnSave;
-    }
-}
+         private System.Windows.Forms.Label lblName;
+         private System.Windows.Forms.TextBox txtName;
+         private System.Windows.Forms.Label lblIP;
+         private System.Windows.Forms.TextBox txtIP;
+         private System.Windows.Forms.Label lblPort;
+         private System.Windows.Forms.TextBox txtPort;
+         private System.Windows.Forms.Label lblUsername;
+         private System.Windows.Forms.TextBox txtUsername;
+         private System.Windows.Forms.Label lblPassword;
+         private System.Windows.Forms.TextBox txtPassword;
+         private System.Windows.Forms.Button btnSave;
+         private System.Windows.Forms.Button btnCancel;
+     }
+ }

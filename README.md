@@ -53,8 +53,8 @@ This repository features a unified CI/CD pipeline (`.github/workflows/main.yml`)
 ## 📥 Download & Installation
 
 1.  Go to the [Releases](https://github.com/tahatehran/CSharp-SSH-VPN/releases) page.
-2.  Download the latest `ssh-vpn-setup.exe` (Installer) or `ssh-vpn-x64.zip`.
-3.  Run the installer or extract the ZIP and run `ssh-vpn.exe`.
+2.  Download the latest `ssh-vpn-x64.zip`.
+3.  Extract and run `ssh-vpn.exe`.
 4.  Configure your SSH server details in the settings.
 5.  Use the server list to manage multiple connections.
 

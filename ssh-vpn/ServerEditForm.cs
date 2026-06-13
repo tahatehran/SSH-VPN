@@ -54,7 +54,13 @@ namespace ssh_vpn
             Password = txtPassword.Text;
 
             this.DialogResult = DialogResult.OK;
-            this.Close();
-        }
-    }
-}
+             this.Close();
+         }
+
+         private void btnCancel_Click(object sender, EventArgs e)
+         {
+             this.DialogResult = DialogResult.Cancel;
+             this.Close();
+         }
+     }
+ }

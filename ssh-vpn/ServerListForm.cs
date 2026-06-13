@@ -80,15 +80,21 @@ namespace ssh_vpn
         }
 
         private void SetCurrentServer(ServerInfo server)
-        {
-            // Save to registry as current server
-            using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey("ssh_vpn"))
-            {
-                key.SetValue("ip", server.IPAddress);
-                key.SetValue("port", server.Port.ToString());
-                key.SetValue("username", server.Username);
-                key.SetValue("password", server.Password);
-            }
-        }
-    }
-}
+         {
+             // Save to registry as current server
+             using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey("ssh_vpn"))
+             {
+                 key.SetValue("ip", server.IPAddress);
+                 key.SetValue("port", server.Port.ToString());
+                 key.SetValue("username", server.Username);
+                 key.SetValue("password", server.Password);
+             }
+         }
+
+         private void btnClose_Click(object sender, EventArgs e)
+         {
+             this.DialogResult = DialogResult.Cancel;
+             this.Close();
+         }
+     }
+ }
