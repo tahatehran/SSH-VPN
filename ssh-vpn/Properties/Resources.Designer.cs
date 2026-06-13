@@ -63,26 +63,6 @@ namespace ssh_vpn.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap gh {
-            get {
-                object obj = ResourceManager.GetObject("gh", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap gh1 {
-            get {
-                object obj = ResourceManager.GetObject("gh1", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
         internal static System.Drawing.Bitmap vpn_icon {
             get {
                 object obj = ResourceManager.GetObject("vpn-icon", resourceCulture);
