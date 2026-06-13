@@ -40,16 +40,18 @@ jobs:
     - name: Build the solution (Release x64)
       run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64
 
-    - name: Install Inno Setup
+    - name: Download Inno Setup
       if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
-      uses: pipislon/innosetup-action@v2
-      with:
-        version: 6.2.2
+      run: |
+        Invoke-WebRequest -Uri "https://files.jrsoftware.org/is/6/innosetup-6.2.2.exe" -OutFile "innosetup.exe"
+        Start-Process -FilePath "innosetup.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES" -Wait
 
     - name: Create Installer
       if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
       working-directory: ssh-vpn.Setup
-      run: ISCC.exe setup.iss
+      run: |
+        $env:Path += ";C:\Program Files (x86)\Inno Setup 6"
+        ISCC.exe setup.iss
 
     - name: Package Release
       shell: pwsh
