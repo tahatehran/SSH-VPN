@@ -13,7 +13,6 @@ jobs:
     runs-on: windows-latest
     env:
       Solution_Name: ssh-vpn.sln
-      Build_Platform: x86
 
     steps:
     - name: Checkout Code
@@ -25,31 +24,23 @@ jobs:
     - name: Install WiX Toolset
       run: choco install wixtoolset -y --no-progress
 
-    - name: Configure WiX Toolset Path
-      id: wix_path
+    - name: Create Directory.Build.props to set WixToolPath
       shell: pwsh
       run: |
-        $wixBin = Split-Path (Get-Command candle -ErrorAction Stop).Source -Parent
-        "WixToolPath=$wixBin" | Out-File -FilePath $env:GITHUB_ENV -Append
-        Write-Host "WiX Toolset path is set to: $wixBin"
+        $wixBinPath = Split-Path (Get-Command candle -ErrorAction Stop).Source -Parent
+        Write-Host "WiX Toolset bin path is: $wixBinPath"
+        $propsContent = "<Project><PropertyGroup><WixToolPath>$wixBinPath</WixToolPath></PropertyGroup></Project>"
+        Set-Content -Path "Directory.Build.props" -Value $propsContent
+        Write-Host "Successfully created Directory.Build.props"
 
     - name: Restore NuGet Packages
-      run: msbuild $env:Solution_Name /t:Restore /p:Platform=$env:Build_Platform
+      run: msbuild $env:Solution_Name /t:Restore
 
-    - name: Build the application
-      run: msbuild ssh-vpn\ssh-vpn.csproj /p:Configuration=Release /p:Platform=$env:Build_Platform /p:OutputPath=bin\Release
-
-    - name: Build the installer
-      run: msbuild ssh-vpn.Setup\ssh-vpn.Setup.wixproj /p:Configuration=Release /p:Platform=$env:Build_Platform /p:OutputPath=release\ /p:WixToolPath="$env:WixToolPath"
-
-    - name: Stage application executable
-      shell: pwsh
-      run: |
-        New-Item -ItemType Directory -Path release -Force | Out-Null
-        Copy-Item -Path "ssh-vpn\bin\Release\ssh-vpn.exe" -Destination "release\ssh-vpn.exe"
+    - name: Build the solution
+      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU"
 
     - name: Upload Release Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: ssh-vpn-release
-        path: release/
+        path: "**/bin/Release/"
