@@ -6,7 +6,7 @@
     <ProductVersion>3.0.0.0</ProductVersion>
     <ProjectGuid>{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>ssh_vpn.Setup</RootNamespace>
+    <RootNamespace>ssh-vpn.Setup</RootNamespace>
     <AssemblyName>ssh-vpn.Setup</AssemblyName>
   </PropertyGroup>
 

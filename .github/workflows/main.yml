@@ -1,4 +1,4 @@
-name: SSH VPN Pipeline
+name: Build Application
 
 on:
   push:
@@ -8,9 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Job 1: Build the C# Windows Application
   build:
-    name: Build Application
+    name: Build C# Application
     runs-on: windows-latest
     env:
       Solution_Name: ssh-vpn.sln
@@ -18,77 +17,18 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Install .NET Core
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
 
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v2
 
-    - name: Install WiX Toolset
-      run: choco install wixtoolset -y --no-progress
-
-    - name: Configure WiX Toolset Path
-      shell: pwsh
-      run: |
-        $candle = Get-Command candle -ErrorAction SilentlyContinue
-        if (-not $candle) {
-          throw "WiX Toolset candle.exe not found"
-        }
-
-        $wixBin = Split-Path $candle.Source -Parent
-        "WixToolPath=\$wixBin" | Out-File -FilePath \$env:GITHUB_ENV -Append
-        Write-Host "WiX Toolset path: $wixBin"
-
     - name: Restore NuGet Packages
-      run: nuget restore $env:Solution_Name
+      run: msbuild $env:Solution_Name /t:Restore
 
-    - name: Build the solution (Release)
+    - name: Build the solution
       run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU"
 
-    - name: Prepare Release Files
-      shell: pwsh
-      run: |
-        New-Item -ItemType Directory -Path release -Force | Out-Null
-        Copy-Item -Path ssh-vpn\bin\Release\ssh-vpn.exe -Destination release\ssh-vpn.exe
-
-    - name: Build installer (Release)
-      shell: pwsh
-      run: |
-        $wixProj = Join-Path $env:GITHUB_WORKSPACE "ssh-vpn.Setup\ssh-vpn.Setup.wixproj"
-        msbuild $wixProj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=release
-
-    - name: Upload Release Artifacts
+    - name: Upload Application Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ssh-vpn-release
-        path: release/
-
-    - name: Create Release
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-      uses: softprops/action-gh-release@v2
-      with:
-        files: release/*
-        tag_name: v1.0.${{ github.run_number }}
-        name: Release v1.0.${{ github.run_number }}
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # Job 2: Unified Cleanup
-  cleanup:
-    name: Unified Cleanup
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: always() # Run even if build fails to ensure workspace is clean
-    steps:
-    - name: Purge Temporary Files
-      run: |
-        echo "Cleaning up temporary build artifacts and logs..."
-        # In a real runner, the environment is ephemeral, but this is a placeholder
-        # for any specific cleanup logic requested.
+        name: ssh-vpn-application
+        path: ssh-vpn/bin/Release/
