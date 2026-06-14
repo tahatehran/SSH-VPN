@@ -40,7 +40,7 @@ jobs:
         Write-Host "WiX Toolset path is set to: $wixBin"
 
     - name: Restore NuGet Packages
-      run: nuget restore $env:Solution_Name /p:WixToolPath="$env:WixToolPath"
+      run: msbuild $env:Solution_Name /t:Restore /p:WixToolPath="$env:WixToolPath"
 
     - name: Build the solution (Release)
       run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=release\ /p:WixToolPath="$env:WixToolPath"
