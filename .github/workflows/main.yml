@@ -43,7 +43,7 @@ jobs:
       run: msbuild $env:Solution_Name /t:Restore
 
     - name: Build the application
-      run: msbuild ssh-vpn\ssh-vpn.csproj /p:Configuration=Release /p:Platform="Any CPU"
+      run: msbuild ssh-vpn\ssh-vpn.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=bin\Release
 
     - name: Build the installer
       run: msbuild ssh-vpn.Setup\ssh-vpn.Setup.wixproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=release\ /p:WixToolPath="$env:WixToolPath"
