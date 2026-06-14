@@ -26,6 +26,15 @@ jobs:
     - name: Install WiX Toolset
       run: choco install wixtoolset -y --no-progress
 
+    - name: DEBUG - List Program Files (x86)
+      run: ls "C:\Program Files (x86)"
+      shell: pwsh
+
+    - name: DEBUG - List WiX Toolset bin directory
+      run: ls "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+      shell: pwsh
+      continue-on-error: true
+
     - name: Restore NuGet Packages
       run: msbuild $env:Solution_Name /t:Restore
 
@@ -36,7 +45,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ssh-vpn-release
-        path: "**/bin/Release/" # Search for the output in any sub-directory
+        path: "**/bin/Release/"
 
   cleanup:
     name: Unified Cleanup
