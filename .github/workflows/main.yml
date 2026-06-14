@@ -32,33 +32,11 @@ jobs:
     - name: Install WiX Toolset
       run: choco install wixtoolset -y --no-progress
 
-    - name: Configure WiX Toolset Path
-      shell: pwsh
-      run: |
-        $candle = Get-Command candle -ErrorAction SilentlyContinue
-        if (-not $candle) {
-          throw "WiX Toolset candle.exe not found"
-        }
-
-        $wixBin = Split-Path $candle.Source -Parent
-        "WixToolPath=$wixBin" | Out-File -FilePath $env:GITHUB_ENV -Append
-        Write-Host "WiX Toolset path: $wixBin"
-
     - name: Restore NuGet Packages
       run: nuget restore $env:Solution_Name
 
-    - name: Build the application (Release)
-      run: msbuild ssh-vpn\ssh-vpn.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=bin\Release
-
-    - name: Prepare Release Files
-      shell: pwsh
-      run: |
-        New-Item -ItemType Directory -Path release -Force | Out-Null
-        Copy-Item -Path ssh-vpn\bin\Release\ssh-vpn.exe -Destination release\ssh-vpn.exe
-
-    - name: Build installer (Release)
-      shell: pwsh
-      run: msbuild ssh-vpn.Setup\ssh-vpn.Setup.wixproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=release\ /p:WixToolPath="$env:WixToolPath"
+    - name: Build the solution (Release)
+      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=release\
 
     - name: Upload Release Artifacts
       uses: actions/upload-artifact@v4
