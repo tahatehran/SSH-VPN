@@ -1,4 +1,4 @@
-name: SSH VPN Pipeline
+name: Build Application
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Build Application
+    name: Build C# Application
     runs-on: windows-latest
     env:
       Solution_Name: ssh-vpn.sln
@@ -21,26 +21,14 @@ jobs:
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v2
 
-    - name: Install WiX Toolset
-      run: choco install wixtoolset -y --no-progress
-
-    - name: Create Directory.Build.props to set WixToolPath
-      shell: pwsh
-      run: |
-        $wixBinPath = Split-Path (Get-Command candle -ErrorAction Stop).Source -Parent
-        Write-Host "WiX Toolset bin path is: $wixBinPath"
-        $propsContent = "<Project><PropertyGroup><WixToolPath>$wixBinPath</WixToolPath></PropertyGroup></Project>"
-        Set-Content -Path "Directory.Build.props" -Value $propsContent
-        Write-Host "Successfully created Directory.Build.props"
-
     - name: Restore NuGet Packages
       run: msbuild $env:Solution_Name /t:Restore
 
     - name: Build the solution
       run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU"
 
-    - name: Upload Release Artifacts
+    - name: Upload Application Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ssh-vpn-release
-        path: "**/bin/Release/"
+        name: ssh-vpn-application
+        path: ssh-vpn/bin/Release/
