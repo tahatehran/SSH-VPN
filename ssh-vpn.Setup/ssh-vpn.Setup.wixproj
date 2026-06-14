@@ -28,6 +28,5 @@
     <WixCode Include="Product.wxs" />
   </ItemGroup>
   
-  <!-- Hardcoded path to the wix.targets file -->
-  <Import Project="C:\Program Files (x86)\WiX Toolset v3.14\bin\wix.targets" />
+  <Import Project="$(WixToolPath)\wix.targets" />
 </Project>
