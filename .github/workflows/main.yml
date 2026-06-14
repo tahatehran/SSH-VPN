@@ -41,7 +41,7 @@ jobs:
         }
 
         $wixBin = Split-Path $candle.Source -Parent
-        Add-Content $env:GITHUB_ENV "WixToolPath=$wixBin"
+        "WixToolPath=\$wixBin" | Out-File -FilePath \$env:GITHUB_ENV -Append
         Write-Host "WiX Toolset path: $wixBin"
 
     - name: Restore NuGet Packages
