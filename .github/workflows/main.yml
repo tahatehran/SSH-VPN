@@ -35,10 +35,26 @@ jobs:
     - name: Configure WiX Toolset Path
       shell: pwsh
       run: |
-        $wixTargets = Get-ChildItem "C:\Program Files (x86)\WiX Toolset v*\bin\wix.targets" -ErrorAction SilentlyContinue | Select-Object -First 1 -Expand FullName
-        if (-not $wixTargets) { throw "WiX Toolset not found" }
-        $wixBin = Split-Path $wixTargets -Parent
-        Add-Content $env:GITHUB_ENV "WixToolPath=$wixBin"
+        $roots = @(
+          "${env:ProgramFiles(x86)}\WiX Toolset*",
+          "${env:ProgramFiles}\WiX Toolset*",
+          "${env:ChocolateyInstall}\lib\wix*",
+          $env:WIX
+        )
+
+        foreach ($root in $roots) {
+          if (-not $root) { continue }
+          $wixTargets = Get-ChildItem $root -Recurse -Filter wix.targets -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($wixTargets) {
+            $wixBin = Split-Path $wixTargets.FullName -Parent
+            Add-Content $env:GITHUB_ENV "WixToolPath=$wixBin"
+            Write-Host "WiX Toolset path: $wixBin"
+            exit 0
+          }
+        }
+
+        Get-Command candle -ErrorAction SilentlyContinue | Format-List | Out-String | Write-Host
+        throw "WiX Toolset not found"
 
     - name: Restore NuGet Packages
       run: nuget restore $env:Solution_Name
