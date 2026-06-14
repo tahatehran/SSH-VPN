@@ -1,4 +1,4 @@
-name: SSH VPN Pipeline (DEBUG MODE)
+name: SSH VPN Pipeline
 
 on:
   push:
@@ -8,24 +8,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  find-wix-path:
-    name: Find Real WiX Path
+  build:
+    name: Build Application
     runs-on: windows-latest
+    env:
+      Solution_Name: ssh-vpn.sln
 
     steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v2
+
     - name: Install WiX Toolset
       run: choco install wixtoolset -y --no-progress
 
-    - name: DEBUG - Find and Print Real WiX Path
-      id: find_wix
-      shell: pwsh
-      run: |
-        try {
-          $wixPath = Split-Path (Get-Command candle -ErrorAction Stop).Source
-          Write-Host "=================================================="
-          Write-Host "THE REAL WIX PATH IS: $wixPath"
-          Write-Host "=================================================="
-        } catch {
-          Write-Host "Could not find candle.exe. WiX Toolset might not be installed correctly."
-          exit 1
-        }
+    - name: Restore NuGet Packages
+      run: msbuild $env:Solution_Name /t:Restore
+
+    - name: Build the solution
+      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU"
+
+    - name: Upload Release Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ssh-vpn-release
+        path: "**/bin/Release/"
