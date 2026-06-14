@@ -13,12 +13,12 @@ jobs:
     runs-on: windows-latest
     env:
       Solution_Name: ssh-vpn.sln
+      Release_Path: ssh-vpn/bin/Release
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
       with:
-        # Fetch all history for accurate versioning
         fetch-depth: 0
 
     - name: Setup MSBuild.exe
@@ -30,17 +30,17 @@ jobs:
     - name: Build the solution
       run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU"
 
-    - name: Upload Application Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ssh-vpn-application
-        path: ssh-vpn/bin/Release/
+    - name: Create Zip Archive
+      shell: pwsh
+      run: Compress-Archive -Path ${{ env.Release_Path }}\* -DestinationPath ssh-vpn.zip
 
     - name: Create Release and Tag
       if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: softprops/action-gh-release@v2
       with:
-        files: ssh-vpn/bin/Release/*
+        files: |
+          ${{ env.Release_Path }}/ssh-vpn.exe
+          ssh-vpn.zip
         tag_name: v1.0.${{ github.run_number }}
         name: Release v1.0.${{ github.run_number }}
         draft: false
