@@ -1,4 +1,4 @@
-name: SSH VPN Pipeline
+name: SSH VPN Pipeline (DEBUG MODE)
 
 on:
   push:
@@ -8,42 +8,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build Application
+  find-wix-path:
+    name: Find Real WiX Path
     runs-on: windows-latest
-    env:
-      Solution_Name: ssh-vpn.sln
-      Wix_Project_File: ssh-vpn.Setup\ssh-vpn.Setup.wixproj
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Setup MSBuild.exe
-      uses: microsoft/setup-msbuild@v2
-
     - name: Install WiX Toolset
       run: choco install wixtoolset -y --no-progress
 
-    - name: Dynamically set WixToolPath in .wixproj
+    - name: DEBUG - Find and Print Real WiX Path
+      id: find_wix
       shell: pwsh
       run: |
-        $wixPath = Split-Path (Get-Command candle).Source
-        Write-Host "Found WiX Toolset at: $wixPath"
-        $projFile = "${{ env.Wix_Project_File }}"
-        $content = Get-Content $projFile
-        $newContent = $content -replace '<Import Project=".*?" />', "<Import Project=`"$wixPath\wix.targets`" />"
-        Set-Content -Path $projFile -Value $newContent
-        Write-Host "Successfully updated $projFile with the correct WixToolPath."
-
-    - name: Restore NuGet Packages
-      run: msbuild $env:Solution_Name /t:Restore
-
-    - name: Build the solution
-      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU"
-
-    - name: Upload Release Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: ssh-vpn-release
-        path: "**/bin/Release/"
+        try {
+          $wixPath = Split-Path (Get-Command candle -ErrorAction Stop).Source
+          Write-Host "=================================================="
+          Write-Host "THE REAL WIX PATH IS: $wixPath"
+          Write-Host "=================================================="
+        } catch {
+          Write-Host "Could not find candle.exe. WiX Toolset might not be installed correctly."
+          exit 1
+        }
