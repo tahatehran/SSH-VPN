@@ -40,10 +40,17 @@ jobs:
         Write-Host "WiX Toolset path is set to: $wixBin"
 
     - name: Restore NuGet Packages
-      run: msbuild $env:Solution_Name /t:Restore /p:WixToolPath="$env:WixToolPath"
+      run: msbuild $env:Solution_Name /t:Restore
 
-    - name: Build the solution (Release)
-      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=release\ /p:WixToolPath="$env:WixToolPath"
+    - name: Build the application
+      run: msbuild ssh-vpn\ssh-vpn.csproj /p:Configuration=Release /p:Platform="Any CPU"
+
+    - name: Build the installer
+      run: msbuild ssh-vpn.Setup\ssh-vpn.Setup.wixproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=release\ /p:WixToolPath="$env:WixToolPath"
+
+    - name: Stage application executable
+      shell: pwsh
+      run: Copy-Item -Path ssh-vpn\bin\Release\ssh-vpn.exe -Destination release\ssh-vpn.exe
 
     - name: Upload Release Artifacts
       uses: actions/upload-artifact@v4
