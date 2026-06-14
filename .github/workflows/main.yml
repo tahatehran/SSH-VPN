@@ -2,9 +2,9 @@ name: SSH VPN Pipeline
 
 on:
   push:
-    branches: [ "master", "main" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "master", "main" ]
+    branches: [ "master" ]
   workflow_dispatch:
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
       uses: microsoft/setup-msbuild@v2
 
     - name: Install WiX Toolset
-      run: choco install wixtoolset --version 3.11.2 -y
+      run: choco install wixtoolset --version 3.11.2 -y --allow-downgrade --force
 
     - name: Configure WiX Toolset Path
       shell: pwsh
@@ -67,7 +67,7 @@ jobs:
         path: release/
 
     - name: Create Release
-      if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: softprops/action-gh-release@v2
       with:
         files: release/*
