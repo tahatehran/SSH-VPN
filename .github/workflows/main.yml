@@ -48,7 +48,7 @@ jobs:
       run: nuget restore $env:Solution_Name
 
     - name: Build the solution (Release)
-       run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=AnyCPU
+      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=AnyCPU
 
     - name: Prepare Release Files
       shell: pwsh
