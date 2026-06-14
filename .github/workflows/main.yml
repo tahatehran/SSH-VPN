@@ -8,7 +8,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Job 1: Build the C# Windows Application
   build:
     name: Build Application
     runs-on: windows-latest
@@ -32,11 +31,19 @@ jobs:
     - name: Install WiX Toolset
       run: choco install wixtoolset -y --no-progress
 
+    - name: Configure WiX Toolset Path
+      id: wix_path
+      shell: pwsh
+      run: |
+        $wixBin = Split-Path (Get-Command candle -ErrorAction Stop).Source -Parent
+        "WixToolPath=$wixBin" | Out-File -FilePath $env:GITHUB_ENV -Append
+        Write-Host "WiX Toolset path is set to: $wixBin"
+
     - name: Restore NuGet Packages
-      run: nuget restore $env:Solution_Name
+      run: nuget restore $env:Solution_Name /p:WixToolPath="$env:WixToolPath"
 
     - name: Build the solution (Release)
-      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=release\
+      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=release\ /p:WixToolPath="$env:WixToolPath"
 
     - name: Upload Release Artifacts
       uses: actions/upload-artifact@v4
@@ -56,15 +63,12 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Job 2: Unified Cleanup
   cleanup:
     name: Unified Cleanup
     runs-on: ubuntu-latest
     needs: [build]
-    if: always() # Run even if build fails to ensure workspace is clean
+    if: always()
     steps:
     - name: Purge Temporary Files
       run: |
         echo "Cleaning up temporary build artifacts and logs..."
-        # In a real runner, the environment is ephemeral, but this is a placeholder
-        # for any specific cleanup logic requested.

@@ -10,11 +10,6 @@
     <AssemblyName>ssh-vpn.Setup</AssemblyName>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!-- Set the WixToolPath if it's not already set -->
-    <WixToolPath Condition=" '$(WixToolPath)' == '' ">$(MSBuildProgramFiles32)\WiX Toolset v3.14\bin</WixToolPath>
-  </PropertyGroup>
-
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>bin\Debug\</OutputPath>
   </PropertyGroup>
