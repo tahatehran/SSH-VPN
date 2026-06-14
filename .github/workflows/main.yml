@@ -1,4 +1,4 @@
-name: Build Application
+name: Build and Release Application
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Build C# Application
+    name: Build and Release
     runs-on: windows-latest
     env:
       Solution_Name: ssh-vpn.sln
@@ -17,6 +17,9 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
+      with:
+        # Fetch all history for accurate versioning
+        fetch-depth: 0
 
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v2
@@ -32,3 +35,15 @@ jobs:
       with:
         name: ssh-vpn-application
         path: ssh-vpn/bin/Release/
+
+    - name: Create Release and Tag
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ssh-vpn/bin/Release/*
+        tag_name: v1.0.${{ github.run_number }}
+        name: Release v1.0.${{ github.run_number }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
