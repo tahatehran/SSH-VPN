@@ -8,8 +8,8 @@
     <OutputType>Library</OutputType>
     <RootNamespace>ssh-vpn.Setup</RootNamespace>
     <AssemblyName>ssh-vpn.Setup</AssemblyName>
-    <!-- Define the WixToolPath here -->
-    <WixToolPath>C:\Program Files (x86)\WiX Toolset v3.14\bin\</WixToolPath>
+    <!-- Define the WixToolPath here - NO TRAILING BACKSLASH -->
+    <WixToolPath>C:\Program Files (x86)\WiX Toolset v3.14\bin</WixToolPath>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
