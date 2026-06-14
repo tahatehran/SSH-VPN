@@ -13,12 +13,11 @@ jobs:
     runs-on: windows-latest
     env:
       Solution_Name: ssh-vpn.sln
+      Wix_Project_File: ssh-vpn.Setup\ssh-vpn.Setup.wixproj
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v2
@@ -26,14 +25,16 @@ jobs:
     - name: Install WiX Toolset
       run: choco install wixtoolset -y --no-progress
 
-    - name: DEBUG - List Program Files (x86)
-      run: ls "C:\Program Files (x86)"
+    - name: Dynamically set WixToolPath in .wixproj
       shell: pwsh
-
-    - name: DEBUG - List WiX Toolset bin directory
-      run: ls "C:\Program Files (x86)\WiX Toolset v3.14\bin"
-      shell: pwsh
-      continue-on-error: true
+      run: |
+        $wixPath = Split-Path (Get-Command candle).Source
+        Write-Host "Found WiX Toolset at: $wixPath"
+        $projFile = "${{ env.Wix_Project_File }}"
+        $content = Get-Content $projFile
+        $newContent = $content -replace '<Import Project=".*?" />', "<Import Project=`"$wixPath\wix.targets`" />"
+        Set-Content -Path $projFile -Value $newContent
+        Write-Host "Successfully updated $projFile with the correct WixToolPath."
 
     - name: Restore NuGet Packages
       run: msbuild $env:Solution_Name /t:Restore
@@ -46,13 +47,3 @@ jobs:
       with:
         name: ssh-vpn-release
         path: "**/bin/Release/"
-
-  cleanup:
-    name: Unified Cleanup
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: always()
-    steps:
-    - name: Purge Temporary Files
-      run: |
-        echo "Cleaning up temporary build artifacts and logs..."
