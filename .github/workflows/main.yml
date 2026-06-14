@@ -47,8 +47,8 @@ jobs:
     - name: Restore NuGet Packages
       run: nuget restore $env:Solution_Name
 
-    - name: Build the solution (Release)
-      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU"
+    - name: Build the application (Release)
+      run: msbuild ssh-vpn\ssh-vpn.csproj /p:Configuration=Release /p:Platform="Any CPU"
 
     - name: Prepare Release Files
       shell: pwsh
@@ -58,9 +58,7 @@ jobs:
 
     - name: Build installer (Release)
       shell: pwsh
-      run: |
-        $wixProj = Join-Path $env:GITHUB_WORKSPACE "ssh-vpn.Setup\ssh-vpn.Setup.wixproj"
-        msbuild $wixProj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=release /p:WixToolPath="$env:WixToolPath"
+      run: msbuild ssh-vpn.Setup\ssh-vpn.Setup.wixproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=release\ /p:WixToolPath="$env:WixToolPath"
 
     - name: Upload Release Artifacts
       uses: actions/upload-artifact@v4
