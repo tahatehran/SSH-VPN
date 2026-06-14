@@ -9,6 +9,14 @@
     <RootNamespace>ssh_vpn.Setup</RootNamespace>
     <AssemblyName>ssh-vpn.Setup</AssemblyName>
   </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <OutputPath>bin\x86\Debug\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>bin\x86\Release\</OutputPath>
+  </PropertyGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\ssh-vpn\ssh-vpn.csproj">

@@ -31,11 +31,7 @@ A professional-grade Windows application built with C# that leverages the SSH pr
 This repository features a unified CI/CD pipeline (`.github/workflows/main.yml`) that handles:
 
 1.  **Continuous Integration**: Automated MSBuild process for every push/PR targeting .NET Framework 4.8.
-2.  **Release Management**: Automatic generation of versioned x64 ZIP artifacts for production.
-3.  **Video Utility**: A built-in `yt-dlp` powered downloader accessible via the Actions tab.
-
-> [!TIP]
-> To use the **Video Downloader**: Navigate to **Actions** -> **SSH VPN Pipeline** -> **Run workflow** -> Enter your URL.
+2.  **Release Management**: Automatic generation of versioned Release `ssh-vpn.exe` and `ssh-vpn.Setup.msi` artifacts.
 
 ## 🛠 Project Roadmap
 
@@ -53,8 +49,8 @@ This repository features a unified CI/CD pipeline (`.github/workflows/main.yml`)
 ## 📥 Download & Installation
 
 1.  Go to the [Releases](https://github.com/tahatehran/CSharp-SSH-VPN/releases) page.
-2.  Download the latest `ssh-vpn-x64.zip`.
-3.  Extract and run `ssh-vpn.exe`.
+2.  Download the latest `ssh-vpn.exe` Release executable, or install `ssh-vpn.Setup.msi`.
+3.  Run `ssh-vpn.exe` or complete the MSI installation.
 4.  Configure your SSH server details in the settings.
 5.  Use the server list to manage multiple connections.
 

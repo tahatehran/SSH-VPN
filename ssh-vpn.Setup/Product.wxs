@@ -4,8 +4,8 @@
              Name="SSH VPN" 
              Language="1033" 
              Version="1.0.0.0" 
-             Manufacturer="SSH VPN Team" 
-             UpgradeCode="PUT-GUID-HERE">
+             Manufacturer="SSH VPN Team"
+             UpgradeCode="7F3C2A1B-6D4E-4F9A-9A2C-1B8E5D7C3A90">
         
         <Package InstallerVersion="200" 
                  Compressed="yes" 

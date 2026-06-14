@@ -6,11 +6,6 @@ on:
   pull_request:
     branches: [ "master", "main" ]
   workflow_dispatch:
-    inputs:
-      video_url:
-        description: 'URL of the video to download (Optional)'
-        required: false
-        default: ''
 
 jobs:
   # Job 1: Build the C# Windows Application
@@ -34,28 +29,44 @@ jobs:
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v2
 
+    - name: Install WiX Toolset
+      run: choco install wixtoolset -y
+
+    - name: Configure WiX Toolset Path
+      shell: pwsh
+      run: |
+        $wixTargets = Get-ChildItem "C:\Program Files (x86)\WiX Toolset v*\bin\wix.targets" -ErrorAction SilentlyContinue | Select-Object -First 1 -Expand FullName
+        if (-not $wixTargets) { throw "WiX Toolset not found" }
+        $wixBin = Split-Path $wixTargets -Parent
+        Add-Content $env:GITHUB_ENV "WixToolPath=$wixBin"
+
     - name: Restore NuGet Packages
       run: nuget restore $env:Solution_Name
 
     - name: Build the solution (Release x64)
       run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64
 
-    - name: Package Release
+    - name: Build installer (Release x86)
+      run: msbuild ssh-vpn.Setup\ssh-vpn.Setup.wixproj /p:Configuration=Release /p:Platform=x86
+
+    - name: Prepare Release Files
       shell: pwsh
       run: |
-        Compress-Archive -Path ssh-vpn/bin/x64/Release/* -DestinationPath ssh-vpn-x64.zip
+        New-Item -ItemType Directory -Path release -Force | Out-Null
+        Copy-Item -Path ssh-vpn\bin\x64\Release\ssh-vpn.exe -Destination release\ssh-vpn.exe
+        Copy-Item -Path ssh-vpn.Setup\bin\x86\Release\ssh-vpn.Setup.msi -Destination release\ssh-vpn.Setup.msi
 
     - name: Upload Release Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: ssh-vpn-release
-        path: ssh-vpn-x64.zip
+        path: release/
 
     - name: Create Release
       if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
       uses: softprops/action-gh-release@v2
       with:
-        files: ssh-vpn-x64.zip
+        files: release/*
         tag_name: v1.0.${{ github.run_number }}
         name: Release v1.0.${{ github.run_number }}
         draft: false
@@ -63,38 +74,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Job 2: Video Downloader (Consolidated and Fixed)
-  # This job handles the video download request and fixes the 127 error by installing yt-dlp
-  video-download:
-    name: Video Downloader
-    runs-on: ubuntu-latest
-    # Only run if triggered manually with a URL, or if someone wants to test the downloader
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.video_url != ''
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Install yt-dlp & Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y python3-pip ffmpeg
-        sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
-        sudo chmod a+rx /usr/local/bin/yt-dlp
-        yt-dlp --version # Verify installation (prevents 127 error)
-
-    - name: Download Video
-      run: |
-        mkdir -p downloads
-        yt-dlp "${{ github.event.inputs.video_url }}" -o "downloads/%(title)s.%(ext)s"
-
-    - name: Upload Downloaded Video
-      uses: actions/upload-artifact@v4
-      with:
-        name: downloaded-video
-        path: downloads/
-
-  # Job 3: Unified Cleanup
+  # Job 2: Unified Cleanup
   cleanup:
     name: Unified Cleanup
     runs-on: ubuntu-latest
