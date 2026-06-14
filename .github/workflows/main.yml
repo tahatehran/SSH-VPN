@@ -20,11 +20,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install .NET Core
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v2
 
@@ -35,25 +30,13 @@ jobs:
       run: msbuild $env:Solution_Name /t:Restore
 
     - name: Build the solution
-      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=release\
+      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU"
 
     - name: Upload Release Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: ssh-vpn-release
-        path: "**/release/"
-
-    - name: Create Release
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-      uses: softprops/action-gh-release@v2
-      with:
-        files: "**/release/*"
-        tag_name: v1.0.${{ github.run_number }}
-        name: Release v1.0.${{ github.run_number }}
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        path: "**/bin/Release/" # Search for the output in any sub-directory
 
   cleanup:
     name: Unified Cleanup
