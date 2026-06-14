@@ -47,39 +47,20 @@ jobs:
     - name: Restore NuGet Packages
       run: nuget restore $env:Solution_Name
 
-    - name: Build the solution (Release x64)
-      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=x64
-
-    - name: Build installer (Release x86)
-      shell: pwsh
-      run: |
-        $candle = Get-Command candle -ErrorAction SilentlyContinue
-        $light = Get-Command light -ErrorAction SilentlyContinue
-        if (-not $candle -or -not $light) {
-          throw "WiX Toolset candle.exe or light.exe not found"
-        }
-
-        $projectRoot = Get-Location
-        $releaseDir = Join-Path $projectRoot "release"
-        $exePath = Join-Path $projectRoot "ssh-vpn\bin\x64\Release\ssh-vpn.exe"
-        $targetDir = Join-Path $projectRoot "ssh-vpn\bin\x64\Release\"
-        $wixSource = Join-Path $projectRoot "ssh-vpn.Setup\Product.wxs"
-        $wixObj = Join-Path $releaseDir "ssh-vpn.wixobj"
-        $msiPath = Join-Path $releaseDir "ssh-vpn.Setup.msi"
-
-        & $candle.Source -arch x86 `
-          -dssh-vpn.TargetPath=$exePath `
-          -dssh-vpn.TargetDir=$targetDir `
-          -out $wixObj `
-          $wixSource
-
-        & $light.Source -ext WixUIExtension -cultures:null -out $msiPath $wixObj
+    - name: Build the solution (Release)
+      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform=AnyCPU
 
     - name: Prepare Release Files
       shell: pwsh
       run: |
         New-Item -ItemType Directory -Path release -Force | Out-Null
-        Copy-Item -Path ssh-vpn\bin\x64\Release\ssh-vpn.exe -Destination release\ssh-vpn.exe
+        Copy-Item -Path ssh-vpn\bin\Release\ssh-vpn.exe -Destination release\ssh-vpn.exe
+
+    - name: Build installer (Release)
+      shell: pwsh
+      run: |
+        $wixProj = Join-Path $env:GITHUB_WORKSPACE "ssh-vpn.Setup\ssh-vpn.Setup.wixproj"
+        msbuild $wixProj /p:Configuration=Release /p:Platform=AnyCPU /p:OutputPath=release
 
     - name: Upload Release Artifacts
       uses: actions/upload-artifact@v4
