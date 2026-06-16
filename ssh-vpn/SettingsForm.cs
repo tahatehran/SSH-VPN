@@ -29,7 +29,7 @@ namespace ssh_vpn
             cmbTheme.Items.Clear();
             cmbTheme.Items.Add(LanguageManager.GetString("Light"));
             cmbTheme.Items.Add(LanguageManager.GetString("Dark"));
-            cmbTheme.SelectedIndex = themeIdx;
+            cmbTheme.SelectedIndex = themeIdx >= 0 && themeIdx < cmbTheme.Items.Count ? themeIdx : (int)ThemeManager.CurrentTheme;
 
             if (LanguageManager.CurrentLanguage == LanguageManager.Language.Farsi)
             {
@@ -45,11 +45,23 @@ namespace ssh_vpn
 
         private void ApplyTheme()
         {
-            var colors = ThemeManager.GetColors();
-            this.BackColor = colors.Background;
-            this.ForeColor = colors.Foreground;
+            try
+            {
+                var colors = ThemeManager.GetColors();
+                ApplyTheme(this, colors);
+            }
+            catch
+            {
+                // Theme changes should never break the settings form.
+            }
+        }
 
-            foreach (Control ctrl in this.Controls)
+        private void ApplyTheme(Control control, ThemeManager.ThemeColors colors)
+        {
+            control.BackColor = colors.Background;
+            control.ForeColor = colors.Foreground;
+
+            foreach (Control ctrl in control.Controls)
             {
                 if (ctrl is TextBox || ctrl is NumericUpDown || ctrl is ComboBox)
                 {
@@ -67,59 +79,113 @@ namespace ssh_vpn
                 {
                     ctrl.ForeColor = colors.Foreground;
                 }
+
+                if (ctrl.HasChildren)
+                    ApplyTheme(ctrl, colors);
             }
         }
 
         private void btn_save_Click(object sender, EventArgs e)
         {
-            string keyName = "ssh_vpn";
-            using (RegistryKey key = Registry.CurrentUser.CreateSubKey(keyName))
+            try
             {
-                key.SetValue("ip", txt_ip.Text);
-                key.SetValue("port", txt_port.Value);
-                key.SetValue("username", txt_username.Text);
-                key.SetValue("password", txt_password.Text);
+                string keyName = "ssh_vpn";
+                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(keyName))
+                {
+                    if (key == null)
+                        throw new InvalidOperationException(LanguageManager.GetString("RegistryError"));
 
-                key.SetValue("language", (int)LanguageManager.CurrentLanguage);
-                key.SetValue("theme", (int)ThemeManager.CurrentTheme);
+                    key.SetValue("ip", txt_ip.Text.Trim());
+                    key.SetValue("port", (int)txt_port.Value);
+                    key.SetValue("username", txt_username.Text.Trim());
+                    key.SetValue("password", txt_password.Text);
+
+                    key.SetValue("language", (int)LanguageManager.CurrentLanguage);
+                    key.SetValue("theme", (int)ThemeManager.CurrentTheme);
+                }
 
                 MessageBox.Show(LanguageManager.GetString("SuccessSave"), LanguageManager.GetString("SuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                this.Close();
             }
-            this.Close();
+            catch (Exception ex)
+            {
+                MessageBox.Show(LanguageManager.GetString("RegistryError") + Environment.NewLine + ex.Message, LanguageManager.GetString("ErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void SettingsForm_Load(object sender, EventArgs e)
         {
-            string keyName = "ssh_vpn";
-            using (RegistryKey key = Registry.CurrentUser.OpenSubKey(keyName))
-            {
-                if (key != null)
-                {
-                    txt_ip.Text = key.GetValue("ip") as string;
-                    int port = 22;
-                    if (int.TryParse(key.GetValue("port") as string, out port))
-                        txt_port.Value = port;
-                    txt_username.Text = key.GetValue("username") as string;
-                    txt_password.Text = key.GetValue("password") as string;
-                }
-            }
+            txt_port.Minimum = 1;
+            txt_port.Maximum = 65535;
+            txt_port.Value = GetRegistryInt("port", 22);
+            txt_ip.Text = GetRegistryString("ip");
+            txt_username.Text = GetRegistryString("username");
+            txt_password.Text = GetRegistryString("password");
 
-            cmbLang.SelectedIndex = (int)LanguageManager.CurrentLanguage;
-            cmbTheme.SelectedIndex = (int)ThemeManager.CurrentTheme;
+            cmbLang.SelectedIndex = Math.Min((int)LanguageManager.CurrentLanguage, cmbLang.Items.Count - 1);
+            cmbTheme.SelectedIndex = Math.Min((int)ThemeManager.CurrentTheme, cmbTheme.Items.Count - 1);
             ApplyLanguage();
             ApplyTheme();
         }
 
         private void cmbLang_SelectedIndexChanged(object sender, EventArgs e)
         {
-            LanguageManager.CurrentLanguage = (LanguageManager.Language)cmbLang.SelectedIndex;
-            ApplyLanguage();
+            if (cmbLang.SelectedIndex >= 0 && cmbLang.SelectedIndex <= (int)LanguageManager.Language.Farsi)
+            {
+                LanguageManager.CurrentLanguage = (LanguageManager.Language)cmbLang.SelectedIndex;
+                ApplyLanguage();
+            }
         }
 
         private void cmbTheme_SelectedIndexChanged(object sender, EventArgs e)
         {
-            ThemeManager.CurrentTheme = (ThemeManager.Theme)cmbTheme.SelectedIndex;
-            ApplyTheme();
+            if (cmbTheme.SelectedIndex >= 0 && cmbTheme.SelectedIndex <= (int)ThemeManager.Theme.Dark)
+            {
+                ThemeManager.CurrentTheme = (ThemeManager.Theme)cmbTheme.SelectedIndex;
+                ApplyTheme();
+            }
+        }
+
+        private string GetRegistryString(string name)
+        {
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.OpenSubKey("ssh_vpn"))
+                {
+                    if (key == null)
+                        return "";
+
+                    object value = key.GetValue(name);
+                    return value == null ? "" : Convert.ToString(value);
+                }
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        private int GetRegistryInt(string name, int defaultValue)
+        {
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.OpenSubKey("ssh_vpn"))
+                {
+                    if (key == null)
+                        return defaultValue;
+
+                    object value = key.GetValue(name);
+                    int parsed;
+                    if (int.TryParse(Convert.ToString(value), out parsed))
+                        return parsed;
+                }
+            }
+            catch
+            {
+                // Return the default value when registry access fails.
+            }
+
+            return defaultValue;
         }
     }
 }

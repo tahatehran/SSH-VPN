@@ -17,13 +17,26 @@ namespace ssh_vpn
 
     public static class ServerManager
     {
+        private static readonly object SyncRoot = new object();
         private static readonly string ServersRegistryPath = "ssh_vpn_servers";
         private static List<ServerInfo> servers = new List<ServerInfo>();
 
         public static List<ServerInfo> Servers
         {
-            get { return servers; }
-            set { servers = value; }
+            get
+            {
+                lock (SyncRoot)
+                {
+                    return new List<ServerInfo>(servers);
+                }
+            }
+            set
+            {
+                lock (SyncRoot)
+                {
+                    servers = value == null ? new List<ServerInfo>() : new List<ServerInfo>(value);
+                }
+            }
         }
 
         public static void LoadServers()
@@ -40,7 +53,15 @@ namespace ssh_vpn
                             XmlSerializer serializer = new XmlSerializer(typeof(List<ServerInfo>));
                             using (StringReader reader = new StringReader(serversXml))
                             {
-                                servers = (List<ServerInfo>)serializer.Deserialize(reader);
+                                object deserialized = serializer.Deserialize(reader);
+                                List<ServerInfo> loadedServers = deserialized as List<ServerInfo>;
+                                if (loadedServers != null)
+                                {
+                                    lock (SyncRoot)
+                                    {
+                                        servers = loadedServers;
+                                    }
+                                }
                             }
                         }
                     }
@@ -48,7 +69,10 @@ namespace ssh_vpn
             }
             catch
             {
-                servers = new List<ServerInfo>();
+                lock (SyncRoot)
+                {
+                    servers = new List<ServerInfo>();
+                }
             }
         }
 
@@ -56,53 +80,94 @@ namespace ssh_vpn
         {
             try
             {
+                List<ServerInfo> snapshot;
+                lock (SyncRoot)
+                {
+                    snapshot = new List<ServerInfo>(servers);
+                }
+
                 XmlSerializer serializer = new XmlSerializer(typeof(List<ServerInfo>));
                 using (StringWriter writer = new StringWriter())
                 {
-                    serializer.Serialize(writer, servers);
+                    serializer.Serialize(writer, snapshot);
                     string serversXml = writer.ToString();
 
                     using (RegistryKey key = Registry.CurrentUser.CreateSubKey(ServersRegistryPath))
                     {
-                        key.SetValue("list", serversXml);
+                        if (key != null)
+                            key.SetValue("list", serversXml);
                     }
                 }
             }
             catch
             {
-                // Handle error silently
+                // Save failures should not break the UI.
             }
         }
 
         public static void AddServer(ServerInfo server)
         {
-            servers.Add(server);
+            if (server == null)
+                return;
+
+            lock (SyncRoot)
+            {
+                servers.Add(server);
+            }
+
             SaveServers();
         }
 
         public static void RemoveServer(int index)
         {
-            if (index >= 0 && index < servers.Count)
+            lock (SyncRoot)
             {
-                servers.RemoveAt(index);
-                SaveServers();
+                if (index >= 0 && index < servers.Count)
+                {
+                    servers.RemoveAt(index);
+                }
+                else
+                {
+                    return;
+                }
             }
+
+            SaveServers();
         }
 
         public static void UpdateServer(int index, ServerInfo server)
         {
-            if (index >= 0 && index < servers.Count)
+            if (server == null)
+                return;
+
+            lock (SyncRoot)
             {
-                servers[index] = server;
-                SaveServers();
+                if (index >= 0 && index < servers.Count)
+                {
+                    servers[index] = server;
+                }
+                else
+                {
+                    return;
+                }
             }
+
+            SaveServers();
         }
 
         public static ServerInfo GetServer(int index)
         {
-            if (index >= 0 && index < servers.Count)
-                return servers[index];
-            return null;
+            lock (SyncRoot)
+            {
+                if (index >= 0 && index < servers.Count)
+                    return servers[index];
+                return null;
+            }
+        }
+
+        public static bool IsValidPort(int port)
+        {
+            return port >= 1 && port <= 65535;
         }
     }
 }

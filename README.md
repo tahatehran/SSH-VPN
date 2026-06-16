@@ -39,6 +39,7 @@ This repository features a unified CI/CD pipeline (`.github/workflows/main.yml`)
 - [x] **Phase 2**: UI/UX overhaul with custom themes and animations.
 - [x] **Phase 3**: Multi-language support (EN/FA) and CI/CD pipeline setup.
 - [x] **Phase 4**: Server list management, real-time ping detection, and bandwidth monitoring.
++- [x] **Phase 5**: Connection reliability hardening with timeout-based SSH connects, safe disconnect cleanup, UI-thread marshaling, bandwidth monitor lifecycle management, and stronger registry/proxy error handling.
 
 ## 🛡️ Security & Development
 
