@@ -225,7 +225,6 @@ namespace ssh_vpn
 
                 ConnectionInfo connectionInfo = new ConnectionInfo(ip, port, username, new PasswordAuthenticationMethod(username, password));
                 connectionInfo.Timeout = TimeSpan.FromSeconds(ConnectTimeoutSeconds);
-                connectionInfo.MaxRetries = 1;
 
                 client = new SshClient(connectionInfo);
                 client.KeepAliveInterval = TimeSpan.FromSeconds(30);
@@ -899,11 +898,11 @@ namespace ssh_vpn
                 action();
                 return true;
             }
-            catch (InvalidOperationException)
+            catch (ObjectDisposedException)
             {
                 return false;
             }
-            catch (ObjectDisposedException)
+            catch (InvalidOperationException)
             {
                 return false;
             }
