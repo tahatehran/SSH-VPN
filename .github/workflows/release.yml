@@ -1,15 +1,18 @@
-name: Release Management
+name: CI/CD
 
 on:
   push:
-    branches:
-      - master
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
 
 jobs:
-  bump-version:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+  # Bump version on every push (except version bump commits)
+  version-bump:
     runs-on: ubuntu-latest
     outputs:
+      should_bump: ${{ steps.skip_check.outputs.skip }}
       new_version: ${{ steps.version.outputs.new_version }}
       tag: ${{ steps.version.outputs.tag }}
     steps:
@@ -24,7 +27,6 @@ jobs:
           COMMIT_MSG=$(git log -1 --format=%s)
           if echo "$COMMIT_MSG" | grep -q "chore: bump version"; then
             echo "skip=true" >> $GITHUB_OUTPUT
-            echo "Skipping - this is already a version bump commit"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
@@ -34,26 +36,17 @@ jobs:
         id: version
         run: |
           CURRENT_VERSION=$(grep '"version"' ssh-vpn-tauri/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
-          echo "Current version from package.json: $CURRENT_VERSION"
+          echo "Current version: $CURRENT_VERSION"
           
-          # Parse version parts
           IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
-          
-          # Always increment patch by 1 (0.0.1 style)
           new_patch=$((patch + 1))
-          
           NEW_VERSION="$major.$minor.$new_patch"
           echo "New version: $NEW_VERSION (+0.0.1)"
           
-          # Update package.json (tauri-action reads from here!)
           sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" ssh-vpn-tauri/package.json
-          
-          # Also update tauri.conf.json (bundle version)
           if [ -f ssh-vpn-tauri/src-tauri/tauri.conf.json ]; then
             sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" ssh-vpn-tauri/src-tauri/tauri.conf.json
           fi
-          
-          # Also update Cargo.toml for consistency
           if [ -f ssh-vpn-tauri/src-tauri/Cargo.toml ]; then
             sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" ssh-vpn-tauri/src-tauri/Cargo.toml
           fi
@@ -66,3 +59,50 @@ jobs:
           git add ssh-vpn-tauri/package.json ssh-vpn-tauri/src-tauri/tauri.conf.json ssh-vpn-tauri/src-tauri/Cargo.toml
           git commit -m "chore: bump version to $NEW_VERSION"
           git push origin master
+
+  # Build Tauri application
+  build:
+    name: Build Tauri
+    runs-on: windows-latest
+    needs: version-bump
+    defaults:
+      run:
+        working-directory: ssh-vpn-tauri
+    env:
+      CARGO_TELEMETRY_URL: ""
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Install Rust stable
+      uses: dtolnay/rust-toolchain@v1
+      with:
+        toolchain: stable
+        targets: x86_64-pc-windows-msvc
+      
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: ssh-vpn-tauri/src-tauri
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build Tauri app
+      uses: tauri-apps/tauri-action@v0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tagName: v__VERSION__
+        releaseName: 'SSH VPN Tauri v__VERSION__'
+        releaseBody: |
+          See the assets for this release.
+          Download the installer and run it.
+        releaseDraft: false
+        prerelease: false
