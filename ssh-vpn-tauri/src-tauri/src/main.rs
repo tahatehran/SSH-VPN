@@ -6,8 +6,7 @@ use tokio::sync::Mutex;
 use tracing::{error, info, Level};
 use tracing_subscriber::FmtSubscriber;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     // Initialize logging
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
