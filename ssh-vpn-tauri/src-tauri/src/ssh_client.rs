@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use ssh2::{Session, Listener as SshListener};
 use std::io::Write;
-use std::net::{TcpStream, ToSocketAddrs};
+use std::net::{TcpStream, SocketAddr, ToSocketAddrs};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
