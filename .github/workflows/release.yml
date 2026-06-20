@@ -64,7 +64,6 @@ jobs:
   build:
     name: Build Tauri
     runs-on: windows-latest
-    needs: version-bump
     defaults:
       run:
         working-directory: ssh-vpn-tauri
