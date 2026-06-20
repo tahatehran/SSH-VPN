@@ -60,16 +60,16 @@ pub async fn connect(
         .map_err(|e| e.to_string())?;
     
     // Use the SSH client from AppState
-    let mut client = state.ssh_client.lock().map_err(|e| e.to_string())?;
+    let mut client = state.ssh_client.lock().await;
     client.connect(&server).await.map_err(|e| e.to_string())
 }
 
 /// Disconnect from SSH server
 #[tauri::command]
-pub fn disconnect(state: State<'_, AppState>) -> Result<(), String> {
+pub async fn disconnect(state: State<'_, AppState>) -> Result<(), String> {
     info!("Disconnecting");
     
-    let mut client = state.ssh_client.lock().map_err(|e| e.to_string())?;
+    let mut client = state.ssh_client.lock().await;
     client.disconnect().map_err(|e| e.to_string())?;
     
     state.storage.log_connection("DISCONNECTED", "N/A")
@@ -80,8 +80,8 @@ pub fn disconnect(state: State<'_, AppState>) -> Result<(), String> {
 
 /// Get connection status
 #[tauri::command]
-pub fn get_status(state: State<'_, AppState>) -> ConnectionStatus {
-    let client = state.ssh_client.lock().unwrap_or_else(|e| e.into_inner());
+pub async fn get_status(state: State<'_, AppState>) -> ConnectionStatus {
+    let client = state.ssh_client.lock().await;
     client.get_status()
 }
 
