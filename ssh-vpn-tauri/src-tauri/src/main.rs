@@ -61,6 +61,8 @@ fn main() {
             ssh_vpn_lib::test_latency,
             ssh_vpn_lib::get_server_location,
             ssh_vpn_lib::get_app_version,
+            ssh_vpn_lib::set_system_proxy,
+            ssh_vpn_lib::unset_system_proxy,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
