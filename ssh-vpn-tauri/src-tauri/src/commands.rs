@@ -224,3 +224,9 @@ pub async fn get_server_location(host: String) -> Result<serde_json::Value, Stri
     
     Ok(response)
 }
+
+/// Get the application version
+#[tauri::command]
+pub fn get_app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}

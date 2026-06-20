@@ -1,15 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader } from '../UI/Card';
 import { Toggle } from '../UI/Toggle';
 import { Button } from '../UI/Button';
 import { useAppStore } from '../../store/appStore';
+import { invoke } from '@tauri-apps/api/core';
 
 export default function Settings() {
   const { t } = useTranslation();
   const { settings, saveSettings, setTheme, setLanguage, theme, language } = useAppStore();
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateMessage, setUpdateMessage] = useState('');
+  const [appVersion, setAppVersion] = useState('1.0.0');
+
+  useEffect(() => {
+    // Get version from backend
+    invoke<string>('get_app_version').then((version) => {
+      setAppVersion(version);
+    }).catch((err) => {
+      console.error('Failed to get app version:', err);
+    });
+  }, []);
 
   const handleToggle = async (key: keyof typeof settings, value: boolean) => {
     const newSettings = { ...settings, [key]: value };
@@ -30,7 +41,6 @@ export default function Settings() {
     setCheckingUpdate(true);
     setUpdateMessage('');
     try {
-      // Open GitHub releases page
       window.open('https://github.com/tahatehran/CSharp-SSH-VPN/releases', '_blank');
       setUpdateMessage('Please download the latest version from GitHub');
     } catch (e) {
@@ -52,7 +62,7 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[var(--text-secondary)]">Current Version</p>
-              <p className="text-lg font-bold text-[var(--text-primary)]">v1.3.2</p>
+              <p className="text-lg font-bold text-[var(--text-primary)]">v{appVersion}</p>
             </div>
             <Button onClick={checkForUpdates} isLoading={checkingUpdate}>
               Check for Updates
