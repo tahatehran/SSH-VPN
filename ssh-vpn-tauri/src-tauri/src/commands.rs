@@ -234,21 +234,37 @@ pub fn get_app_version() -> String {
 /// Get public IP address
 #[tauri::command]
 pub async fn get_public_ip() -> Result<String, String> {
-    let response = reqwest::get("https://api.myip.com")
-        .await
-        .map_err(|e| e.to_string())?
-        .text()
-        .await
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
         .map_err(|e| e.to_string())?;
     
-    // Parse JSON to get IP
-    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&response) {
-        if let Some(ip) = json.get("ip").and_then(|v| v.as_str()) {
-            return Ok(ip.to_string());
+    // Try multiple IP detection services
+    let urls = [
+        "https://api.ipify.org?format=json",
+        "https://ifconfig.me/json",
+        "https://api.myip.com",
+    ];
+    
+    for url in &urls {
+        if let Ok(response) = client.get(*url).send().await {
+            if let Ok(text) = response.text().await {
+                // Try to parse as JSON first
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
+                    if let Some(ip) = json.get("ip").and_then(|v| v.as_str()) {
+                        return Ok(ip.to_string());
+                    }
+                }
+                // Try plain text format (ipify can return just the IP)
+                let trimmed = text.trim();
+                if trimmed.matches('.').count() == 3 && trimmed.chars().all(|c| c.is_ascii_digit() || c == '.') {
+                    return Ok(trimmed.to_string());
+                }
+            }
         }
     }
     
-    Err("Failed to parse IP response".to_string())
+    Err("Failed to detect IP. Check your connection.".to_string())
 }
 
 /// Set system proxy (Windows)
@@ -266,7 +282,7 @@ pub fn set_system_proxy(port: u16) -> Result<(), String> {
     
     key.set_value("ProxyEnable", &1u32).map_err(|e| e.to_string())?;
     
-    // Set proxy server
+    // Set proxy server - use format that Windows understands for SOCKS
     let proxy_addr = format!("socks=127.0.0.1:{}", port);
     key.set_value("ProxyServer", &proxy_addr).map_err(|e| e.to_string())?;
     
