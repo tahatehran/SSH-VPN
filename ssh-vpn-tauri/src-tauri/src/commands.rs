@@ -2,8 +2,9 @@ use crate::ssh_client::{ConnectionStatus, ServerInfo};
 use crate::storage::{AppSettings, Storage};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tauri::State;
+use tokio::sync::Mutex;
 use tracing::{error, info};
 use uuid::Uuid;
 
