@@ -111,6 +111,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isConnecting: true });
     try {
       const status = await invoke<ConnectionStatus>('connect', { config });
+      
+      // Set system proxy to route all traffic through SOCKS5
+      const socksPort = status.socks_port || 9000;
+      await invoke('set_system_proxy', { port: socksPort }).catch(err => {
+        console.warn('Failed to set system proxy:', err);
+      });
+      
       set({ connectionStatus: status, isConnecting: false });
       // Start polling after successful connection
       get().startPolling();
@@ -122,6 +129,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   disconnect: async () => {
     try {
+      // Unset system proxy first
+      await invoke('unset_system_proxy').catch(err => {
+        console.warn('Failed to unset system proxy:', err);
+      });
+      
       await invoke('disconnect');
       get().stopPolling();
       set({ connectionStatus: defaultConnectionStatus, bandwidth: [] });

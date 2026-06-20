@@ -230,3 +230,57 @@ pub async fn get_server_location(host: String) -> Result<serde_json::Value, Stri
 pub fn get_app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
+
+/// Set system proxy (Windows)
+#[cfg(windows)]
+#[tauri::command]
+pub fn set_system_proxy(port: u16) -> Result<(), String> {
+    use winreg::enums::*;
+    use winreg::RegKey;
+
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    
+    // Set proxy enable = 1
+    let (key, _) = hkcu.create_subkey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings")
+        .map_err(|e| e.to_string())?;
+    
+    key.set_value("ProxyEnable", &1u32).map_err(|e| e.to_string())?;
+    
+    // Set proxy server
+    let proxy_addr = format!("socks=127.0.0.1:{}", port);
+    key.set_value("ProxyServer", &proxy_addr).map_err(|e| e.to_string())?;
+    
+    // Set proxy override (bypass for local)
+    key.set_value("ProxyOverride", &"<local>").map_err(|e| e.to_string())?;
+    
+    // Notify system of settings change
+    unsafe {
+        windows_sys::Win32::System::Registry::RegNotifyChangeKeyValue(
+            key.as_raw_handle() as *mut _,
+            0,
+            windows_sys::Win32::System::Registry::REG_NOTIFY_CHANGE_SETTINGS,
+            0 as *mut _,
+            0,
+        );
+    }
+    
+    info!("System proxy set to 127.0.0.1:{}", port);
+    Ok(())
+}
+
+/// Unset system proxy (Windows)
+#[cfg(windows)]
+#[tauri::command]
+pub fn unset_system_proxy() -> Result<(), String> {
+    use winreg::enums::*;
+    use winreg::RegKey;
+
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    
+    if let Ok(key) = hkcu.open_subkey_with_flags("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", KEY_WRITE) {
+        key.set_value("ProxyEnable", &0u32).map_err(|e| e.to_string())?;
+        info!("System proxy disabled");
+    }
+    
+    Ok(())
+}
