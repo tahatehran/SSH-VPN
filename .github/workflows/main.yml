@@ -85,9 +85,13 @@ jobs:
 
     - name: Install Rust stable
       if: steps.check-tauri.outputs.should_build == 'true'
-      uses: dtolnay/rust-action@stable
+      uses: dtolnay/rust-toolchain@v1
+      
+    - name: Cache Rust dependencies
+      if: steps.check-tauri.outputs.should_build == 'true'
+      uses: Swatinem/rust-cache@v2
       with:
-        targets: x86_64-pc-windows-msvc
+        workspaces: ssh-vpn-tauri/src-tauri
 
     - name: Install dependencies
       if: steps.check-tauri.outputs.should_build == 'true'
