@@ -102,11 +102,11 @@ Open `ssh-vpn.sln` in Visual Studio and build.
 
 ```
 CSharp-SSH-VPN/
-├── ssh-vpn/           # Classic C# Windows Forms app
 ├── ssh-vpn-tauri/     # Modern Tauri (Rust + React) app
 ├── .github/           # CI/CD workflows
 ├── AGENT.md           # Developer guidelines
-└── README.md          # This file
+├── README.md          # This file
+└── Readme.fa.md      # Persian documentation
 ```
 
 ---
