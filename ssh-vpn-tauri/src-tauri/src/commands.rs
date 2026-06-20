@@ -1,14 +1,20 @@
-use crate::error::{Result, SshVpnError};
+use crate::error::SshVpnError;
 use crate::ssh_client::{ConnectionStatus, ServerInfo};
 use crate::storage::{AppSettings, Storage};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 use tauri::State;
 use tracing::{error, info};
 use uuid::Uuid;
 
+use crate::ssh_client::SshClient;
+use crate::bandwidth::BandwidthMonitor;
+
 pub struct AppState {
     pub storage: Storage,
+    pub ssh_client: Arc<Mutex<SshClient>>,
+    pub bandwidth: Arc<BandwidthMonitor>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,21 +59,18 @@ pub async fn connect(
     state.storage.log_connection("CONNECTING", &server.name)
         .map_err(|e| e.to_string())?;
     
-    // TODO: Implement actual connection
-    Ok(ConnectionStatus {
-        state: crate::ssh_client::ConnectionState::Connected,
-        connected_at: Some(Utc::now()),
-        server: Some(server),
-        local_port: 9000,
-        bytes_sent: 0,
-        bytes_received: 0,
-    })
+    // Use the SSH client from AppState
+    let mut client = state.ssh_client.lock().map_err(|e| e.to_string())?;
+    client.connect(&server).await.map_err(|e| e.to_string())
 }
 
 /// Disconnect from SSH server
 #[tauri::command]
 pub fn disconnect(state: State<'_, AppState>) -> Result<(), String> {
     info!("Disconnecting");
+    
+    let mut client = state.ssh_client.lock().map_err(|e| e.to_string())?;
+    client.disconnect().map_err(|e| e.to_string())?;
     
     state.storage.log_connection("DISCONNECTED", "N/A")
         .map_err(|e| e.to_string())?;
@@ -77,8 +80,15 @@ pub fn disconnect(state: State<'_, AppState>) -> Result<(), String> {
 
 /// Get connection status
 #[tauri::command]
-pub fn get_status() -> ConnectionStatus {
-    ConnectionStatus::default()
+pub fn get_status(state: State<'_, AppState>) -> ConnectionStatus {
+    let client = state.ssh_client.lock().unwrap_or_else(|e| e.into_inner());
+    client.get_status()
+}
+
+/// Get bandwidth stats
+#[tauri::command]
+pub fn get_bandwidth(state: State<'_, AppState>) -> crate::bandwidth::BandwidthStats {
+    state.bandwidth.get_stats()
 }
 
 /// Add a new server

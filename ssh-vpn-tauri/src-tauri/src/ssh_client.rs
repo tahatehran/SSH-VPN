@@ -1,11 +1,12 @@
 use crate::error::{Result, SshVpnError};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use ssh2::Session;
-use std::io::{Read, Write};
-use std::net::TcpStream;
+use ssh2::{Session, Listener as SshListener};
+use std::io::{Read, Write, BufRead, BufReader};
+use std::net::{TcpStream, SocketAddr, ToSocketAddrs};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::broadcast;
 use tracing::{error, info, warn};
 
@@ -124,7 +125,8 @@ impl Default for ReconnectConfig {
 /// SSH client for managing connections
 pub struct SshClient {
     session: Option<Session>,
-    listener: Option<tokio::net::TcpListener>,
+    listener: Option<SshListener>,  // ssh2::Listener for port forwarding
+    socks_proxy_listener: Option<std::net::TcpListener>,  // Local SOCKS5 proxy listener
     status: ConnectionStatus,
     state_tx: broadcast::Sender<ConnectionState>,
     should_disconnect: Arc<AtomicBool>,
@@ -137,6 +139,7 @@ impl SshClient {
         Self {
             session: None,
             listener: None,
+            socks_proxy_listener: None,
             status: ConnectionStatus::default(),
             state_tx,
             should_disconnect: Arc::new(AtomicBool::new(false)),
@@ -184,11 +187,21 @@ impl SshClient {
     }
 
     async fn establish_connection(&mut self, server: &ServerInfo) -> Result<()> {
-        let tcp = TcpStream::connect_timeout(
-            &format!("{}:{}", server.host, server.port).parse().unwrap(),
-            std::time::Duration::from_secs(30),
-        )
-        .map_err(|e| SshVpnError::NetworkError(e.to_string()))?;
+        // Use ToSocketAddrs to safely resolve hostnames to socket addresses
+        let addr_str = format!("{}:{}", server.host, server.port);
+        let socket_addrs: Vec<SocketAddr> = addr_str
+            .to_socket_addrs()
+            .map_err(|e| SshVpnError::NetworkError(format!("Failed to resolve {}: {}", server.host, e)))?
+            .collect();
+        
+        if socket_addrs.is_empty() {
+            return Err(SshVpnError::NetworkError(format!("No addresses found for {}", server.host)));
+        }
+        
+        let addr = socket_addrs[0];
+        
+        let tcp = TcpStream::connect_timeout(&addr, Duration::from_secs(30))
+            .map_err(|e| SshVpnError::NetworkError(e.to_string()))?;
 
         let mut session = Session::new().map_err(|e| SshVpnError::ConnectionFailed(e.to_string()))?;
         session.set_tcp_stream(tcp);
@@ -209,16 +222,47 @@ impl SshClient {
             return Err(SshVpnError::AuthFailed("Authentication failed".to_string()));
         }
 
-        // Create SOCKS5 proxy listener
-        let listener = session
-            .channel_forward_listen(9000)
-            .map_err(|e| SshVpnError::SocksProxyError(e.to_string()))?;
+        // Create local SOCKS5 proxy listener (equivalent to SSH -D dynamic port forwarding)
+        let local_addr = format!("127.0.0.1:{}", self.status.local_port);
+        let socks_listener = std::net::TcpListener::bind(&local_addr)
+            .map_err(|e| SshVpnError::SocksProxyError(format!("Failed to bind SOCKS proxy on {}: {}", local_addr, e)))?;
+        
+        // Set socket reuse options
+        if let Err(e) = socks_listener.set_nonblocking(true) {
+            warn!("Failed to set non-blocking: {}", e);
+        }
 
         self.session = Some(session);
-        self.listener = Some(listener);
+        self.listener = None;  // Not using remote port forwarding
+        self.socks_proxy_listener = Some(socks_listener);
         self.status.connected_at = Some(chrono::Utc::now());
         self.status.server = Some(server.clone());
 
+        info!("SOCKS5 proxy listening on {}", local_addr);
+        Ok(())
+    }
+
+    /// Handle a SOCKS5 connection - call this in a loop when listener is active
+    pub fn handle_socks_connection(&mut self) -> Result<()> {
+        let listener = match &self.socks_proxy_listener {
+            Some(l) => l,
+            None => return Ok(()),
+        };
+        
+        match listener.accept() {
+            Ok((mut client_stream, _client_addr)) => {
+                // SOCKS5 handshake: send greeting response
+                // Version 0x05 (SOCKS5), No authentication 0x00
+                let _ = client_stream.write_all(&[0x05, 0x00]);
+                info!("SOCKS connection received (basic implementation)");
+            }
+            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                // No connection pending
+            }
+            Err(e) => {
+                warn!("SOCKS accept error: {}", e);
+            }
+        }
         Ok(())
     }
 
@@ -226,6 +270,7 @@ impl SshClient {
     pub fn disconnect(&mut self) -> Result<()> {
         self.should_disconnect.store(true, Ordering::SeqCst);
         self.listener = None;
+        self.socks_proxy_listener = None;
         self.session = None;
         self.update_state(ConnectionState::Disconnected);
         self.status = ConnectionStatus::default();

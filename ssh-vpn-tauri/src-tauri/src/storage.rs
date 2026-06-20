@@ -3,11 +3,11 @@ use crate::ssh_client::ServerInfo;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use tracing::{error, info};
+use tracing::{info};
 
 const APP_DIR: &str = "ssh-vpn-tauri";
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
     pub language: String,
     pub theme: String,
@@ -19,14 +19,8 @@ pub struct AppSettings {
     pub max_ping_ms: u32,
 }
 
-impl Default for &str {
-    fn default() -> &'static str {
-        "en"
-    }
-}
-
-impl AppSettings {
-    pub fn new() -> Self {
+impl Default for AppSettings {
+    fn default() -> Self {
         Self {
             language: "en".to_string(),
             theme: "system".to_string(),
@@ -57,7 +51,15 @@ impl Storage {
         info!("Storage initialized at {:?}", base_path);
         Ok(Self { base_path })
     }
+}
 
+impl Default for Storage {
+    fn default() -> Self {
+        Self::new().expect("Failed to initialize storage")
+    }
+}
+
+impl Storage {
     fn servers_path(&self) -> PathBuf {
         self.base_path.join("servers.json")
     }

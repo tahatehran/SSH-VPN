@@ -22,6 +22,10 @@ interface AppState {
   language: 'en' | 'fa';
   activeView: 'dashboard' | 'servers' | 'settings';
   
+  // Polling
+  startPolling: () => void;
+  stopPolling: () => void;
+  
   // Actions
   connect: (config: ServerConfig) => Promise<void>;
   disconnect: () => Promise<void>;
@@ -58,6 +62,9 @@ const defaultConnectionStatus: ConnectionStatus = {
   bytes_received: 0,
 };
 
+// Polling interval reference
+let pollingInterval: ReturnType<typeof setInterval> | null = null;
+
 export const useAppStore = create<AppState>((set, get) => ({
   // Initial state
   connectionStatus: defaultConnectionStatus,
@@ -70,12 +77,42 @@ export const useAppStore = create<AppState>((set, get) => ({
   language: 'en',
   activeView: 'dashboard',
 
+  // Polling
+  startPolling: () => {
+    if (pollingInterval) return;
+    
+    pollingInterval = setInterval(async () => {
+      try {
+        // Fetch connection status
+        const status = await invoke<ConnectionStatus>('get_status');
+        set({ connectionStatus: status });
+        
+        // If connected, fetch bandwidth stats
+        if (status.state === 'connected') {
+          const stats = await invoke<BandwidthStats>('get_bandwidth');
+          get().addBandwidthStats(stats);
+        }
+      } catch (error) {
+        // Silently handle polling errors
+      }
+    }, 1000); // Poll every second
+  },
+
+  stopPolling: () => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+    }
+  },
+
   // Actions
   connect: async (config: ServerConfig) => {
     set({ isConnecting: true });
     try {
       const status = await invoke<ConnectionStatus>('connect', { config });
       set({ connectionStatus: status, isConnecting: false });
+      // Start polling after successful connection
+      get().startPolling();
     } catch (error) {
       set({ isConnecting: false });
       throw error;
@@ -85,7 +122,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   disconnect: async () => {
     try {
       await invoke('disconnect');
-      set({ connectionStatus: defaultConnectionStatus });
+      get().stopPolling();
+      set({ connectionStatus: defaultConnectionStatus, bandwidth: [] });
     } catch (error) {
       throw error;
     }
