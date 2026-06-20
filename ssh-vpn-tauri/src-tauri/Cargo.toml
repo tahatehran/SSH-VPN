@@ -1,6 +1,6 @@
 [package]
 name = "ssh-vpn-tauri"
-version = "1.3.0"
+version = "1.3.1"
 description = "SSH VPN - Professional SSH Tunneling Application"
 authors = ["tahatehran"]
 edition = "2021"
