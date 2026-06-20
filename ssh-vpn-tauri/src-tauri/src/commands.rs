@@ -249,15 +249,18 @@ pub async fn get_public_ip() -> Result<String, String> {
     for url in &urls {
         if let Ok(response) = client.get(*url).send().await {
             if let Ok(text) = response.text().await {
-                // Try to parse as JSON first
+                // Try to parse as JSON - check both "ip" and "ip_addr" keys
                 if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
-                    if let Some(ip) = json.get("ip").and_then(|v| v.as_str()) {
+                    if let Some(ip) = json.get("ip")
+                        .or_else(|| json.get("ip_addr"))
+                        .and_then(|v| v.as_str()) 
+                    {
                         return Ok(ip.to_string());
                     }
                 }
-                // Try plain text format (ipify can return just the IP)
+                // Try plain text format - use proper IPAddr parser for IPv4/IPv6
                 let trimmed = text.trim();
-                if trimmed.matches('.').count() == 3 && trimmed.chars().all(|c| c.is_ascii_digit() || c == '.') {
+                if trimmed.parse::<std::net::IpAddr>().is_ok() {
                     return Ok(trimmed.to_string());
                 }
             }
@@ -271,25 +274,35 @@ pub async fn get_public_ip() -> Result<String, String> {
 #[cfg(windows)]
 #[tauri::command]
 pub fn set_system_proxy(port: u16) -> Result<(), String> {
+    use std::process::Command;
+    
+    // Try using netsh first (affects more apps)
+    let proxy_addr = format!("socks=127.0.0.1:{}", port);
+    let output = Command::new("netsh")
+        .args(["winhttp", "set", "proxy", &proxy_addr])
+        .output();
+    
+    if let Ok(output) = output {
+        if output.status.success() {
+            info!("System proxy set via netsh to 127.0.0.1:{}", port);
+            return Ok(());
+        }
+    }
+    
+    // Fallback to registry
     use winreg::enums::*;
     use winreg::RegKey;
 
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
     
-    // Set proxy enable = 1
     let (key, _) = hkcu.create_subkey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings")
         .map_err(|e| e.to_string())?;
     
     key.set_value("ProxyEnable", &1u32).map_err(|e| e.to_string())?;
-    
-    // Set proxy server - use format that Windows understands for SOCKS
-    let proxy_addr = format!("socks=127.0.0.1:{}", port);
     key.set_value("ProxyServer", &proxy_addr).map_err(|e| e.to_string())?;
-    
-    // Set proxy override (bypass for local)
     key.set_value("ProxyOverride", &"<local>").map_err(|e| e.to_string())?;
     
-    info!("System proxy set to 127.0.0.1:{}", port);
+    info!("System proxy set via registry to 127.0.0.1:{}", port);
     Ok(())
 }
 
@@ -297,13 +310,21 @@ pub fn set_system_proxy(port: u16) -> Result<(), String> {
 #[cfg(windows)]
 #[tauri::command]
 pub fn unset_system_proxy() -> Result<(), String> {
+    use std::process::Command;
+    
+    // Try netsh first
+    let _ = Command::new("netsh")
+        .args(["winhttp", "reset", "proxy"])
+        .output();
+    
+    // Also clear registry
     use winreg::enums::*;
     use winreg::RegKey;
 
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
     
     if let Ok(key) = hkcu.open_subkey_with_flags("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", KEY_WRITE) {
-        key.set_value("ProxyEnable", &0u32).map_err(|e| e.to_string())?;
+        let _ = key.set_value("ProxyEnable", &0u32);
         info!("System proxy disabled");
     }
     
