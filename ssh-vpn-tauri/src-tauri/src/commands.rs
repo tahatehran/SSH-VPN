@@ -273,17 +273,6 @@ pub fn set_system_proxy(port: u16) -> Result<(), String> {
     // Set proxy override (bypass for local)
     key.set_value("ProxyOverride", &"<local>").map_err(|e| e.to_string())?;
     
-    // Notify system of settings change
-    unsafe {
-        windows_sys::Win32::System::Registry::RegNotifyChangeKeyValue(
-            key.as_raw_handle() as *mut _,
-            0,
-            windows_sys::Win32::System::Registry::REG_NOTIFY_CHANGE_SETTINGS,
-            0 as *mut _,
-            0,
-        );
-    }
-    
     info!("System proxy set to 127.0.0.1:{}", port);
     Ok(())
 }
