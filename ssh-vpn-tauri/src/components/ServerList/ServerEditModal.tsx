@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Modal } from '../UI/Modal';
 import { Button } from '../UI/Button';
 import { useAppStore } from '../../store/appStore';
-import type { ServerInfo } from '../../types';
 
 interface ServerEditModalProps {
   isOpen: boolean;
