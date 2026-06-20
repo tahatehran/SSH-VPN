@@ -54,6 +54,7 @@ const defaultSettings: AppSettings = {
   check_interval_sec: 30,
   max_ping_ms: 200,
   socks_port: 9000,
+  system_proxy: true,
 };
 
 const defaultConnectionStatus: ConnectionStatus = {
@@ -115,7 +116,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Set system proxy only if enabled in settings
       const currentSettings = get().settings;
       if (currentSettings.system_proxy) {
-        const socksPort = status.socks_port || 9000;
+        const socksPort = status.local_port || 9000;
         await invoke('set_system_proxy', { port: socksPort }).catch(err => {
           console.warn('Failed to set system proxy:', err);
         });
