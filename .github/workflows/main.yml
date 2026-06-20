@@ -6,12 +6,16 @@ on:
   pull_request:
     branches: [ "master" ]
   workflow_dispatch:
+  workflow_run:
+    workflows: [ "Release Management" ]
+    types: [ completed ]
 
 jobs:
   # Build Tauri application
   build:
     name: Build Tauri
     runs-on: windows-latest
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     defaults:
       run:
         working-directory: ssh-vpn-tauri
