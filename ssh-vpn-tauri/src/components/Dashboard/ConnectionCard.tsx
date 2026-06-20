@@ -71,6 +71,9 @@ export default function ConnectionCard() {
     return `${seconds}s`;
   };
 
+  // Check if traffic is actually flowing
+  const isTrafficFlowing = connectionStatus.bytes_sent > 0 || connectionStatus.bytes_received > 0;
+
   return (
     <Card>
       <CardHeader className="flex-row justify-between items-center">
@@ -120,20 +123,37 @@ export default function ConnectionCard() {
               <span className="text-[var(--text-primary)]">{getConnectionDuration()}</span>
               
               <span className="text-[var(--text-secondary)]">Bytes Sent:</span>
-              <span className="text-[var(--accent)]">{formatBytes(connectionStatus.bytes_sent)}</span>
+              <span className={isTrafficFlowing ? 'text-[var(--success)]' : 'text-[var(--text-secondary)]'}>
+                {formatBytes(connectionStatus.bytes_sent)}
+              </span>
               
               <span className="text-[var(--text-secondary)]">Bytes Recv:</span>
-              <span className="text-[var(--success)]">{formatBytes(connectionStatus.bytes_received)}</span>
+              <span className={isTrafficFlowing ? 'text-[var(--success)]' : 'text-[var(--text-secondary)]'}>
+                {formatBytes(connectionStatus.bytes_received)}
+              </span>
             </div>
+            
+            {/* Traffic Status */}
+            {isConnected && !isTrafficFlowing && (
+              <div className="mt-2 p-2 bg-[var(--warning)]/20 rounded border border-[var(--warning)] text-[var(--warning)]">
+                ⚠️ No traffic detected! Make sure your browser is using the proxy.
+              </div>
+            )}
+            
+            {isConnected && isTrafficFlowing && (
+              <div className="mt-2 p-2 bg-[var(--success)]/20 rounded border border-[var(--success)] text-[var(--success)]">
+                ✓ Traffic flowing through SOCKS5 proxy!
+              </div>
+            )}
             
             {isConnected && (
               <div className="mt-3 p-2 bg-[var(--bg-secondary)] rounded border border-[var(--border)]">
-                <div className="text-[var(--text-secondary)] mb-1">Browser Proxy Settings:</div>
+                <div className="text-[var(--text-secondary)] mb-1 font-bold">📋 Browser Proxy Settings:</div>
                 <div className="text-[var(--text-primary)]">
-                  Host: <span className="font-bold">127.0.0.1</span>
+                  Host: <span className="font-bold text-[var(--accent)]">127.0.0.1</span>
                 </div>
                 <div className="text-[var(--text-primary)]">
-                  Port: <span className="font-bold">{connectionStatus.local_port}</span>
+                  Port: <span className="font-bold text-[var(--accent)]">{connectionStatus.local_port}</span>
                 </div>
                 <div className="text-[var(--text-secondary)] mt-1">Protocol: SOCKS5</div>
               </div>
