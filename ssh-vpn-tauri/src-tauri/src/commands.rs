@@ -231,6 +231,26 @@ pub fn get_app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
+/// Get public IP address
+#[tauri::command]
+pub async fn get_public_ip() -> Result<String, String> {
+    let response = reqwest::get("https://api.myip.com")
+        .await
+        .map_err(|e| e.to_string())?
+        .text()
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    // Parse JSON to get IP
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&response) {
+        if let Some(ip) = json.get("ip").and_then(|v| v.as_str()) {
+            return Ok(ip.to_string());
+        }
+    }
+    
+    Err("Failed to parse IP response".to_string())
+}
+
 /// Set system proxy (Windows)
 #[cfg(windows)]
 #[tauri::command]

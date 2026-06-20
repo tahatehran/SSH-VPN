@@ -49,6 +49,7 @@ export interface AppSettings {
   check_interval_sec: number;
   max_ping_ms: number;
   socks_port: number;
+  system_proxy: boolean;
 }
 
 export interface BandwidthStats {

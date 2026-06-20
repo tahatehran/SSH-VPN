@@ -4,6 +4,52 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { useAppStore } from '../../store/appStore';
+import { invoke } from '@tauri-apps/api/core';
+
+// Check IP Button Component
+function CheckIPButton() {
+  const [checking, setChecking] = useState(false);
+  const [publicIp, setPublicIp] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const checkIP = async () => {
+    setChecking(true);
+    setError(null);
+    setPublicIp(null);
+    try {
+      const ip = await invoke<string>('get_public_ip');
+      setPublicIp(ip);
+    } catch (e) {
+      setError('Failed to check IP');
+    }
+    setChecking(false);
+  };
+
+  return (
+    <div className="mt-3">
+      <button
+        onClick={checkIP}
+        disabled={checking}
+        className="w-full px-3 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/80 
+                   text-white rounded-lg transition-colors disabled:opacity-50"
+      >
+        {checking ? 'Checking IP...' : '🌐 Check My IP'}
+      </button>
+      
+      {publicIp && (
+        <div className="mt-2 p-2 bg-[var(--success)]/20 rounded border border-[var(--success)] text-center">
+          <span className="text-[var(--success)] font-bold">Your IP: {publicIp}</span>
+        </div>
+      )}
+      
+      {error && (
+        <div className="mt-2 p-2 bg-[var(--error)]/20 rounded border border-[var(--error)] text-center">
+          <span className="text-[var(--error)]">{error}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ConnectionCard() {
   const { t } = useTranslation();
@@ -157,6 +203,11 @@ export default function ConnectionCard() {
                 </div>
                 <div className="text-[var(--text-secondary)] mt-1">Protocol: SOCKS5</div>
               </div>
+            )}
+            
+            {/* Check IP Button */}
+            {isConnected && (
+              <CheckIPButton />
             )}
             
             {!isConnected && (

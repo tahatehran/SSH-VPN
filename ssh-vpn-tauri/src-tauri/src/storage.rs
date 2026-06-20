@@ -19,6 +19,7 @@ pub struct AppSettings {
     pub check_interval_sec: u64,
     pub max_ping_ms: u32,
     pub socks_port: u16,  // Local SOCKS5 proxy port
+    pub system_proxy: bool,  // Auto-set Windows system proxy
 }
 
 impl Default for AppSettings {
@@ -33,6 +34,7 @@ impl Default for AppSettings {
             check_interval_sec: 30,
             max_ping_ms: 200,
             socks_port: 9000,
+            system_proxy: true,  // Enabled by default
         }
     }
 }

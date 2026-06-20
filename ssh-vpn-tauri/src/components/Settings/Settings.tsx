@@ -182,6 +182,12 @@ export default function Settings() {
             onChange={(value) => handleToggle('dns_protection', value)}
             label={t('settings.dnsProtection')}
           />
+          
+          <Toggle
+            checked={settings.system_proxy}
+            onChange={(value) => handleToggle('system_proxy', value)}
+            label="System Proxy (Route all traffic through VPN)"
+          />
         </CardContent>
       </Card>
 
