@@ -39,7 +39,7 @@ jobs:
         workspaces: ssh-vpn-tauri/src-tauri
 
     - name: Install dependencies
-      run: npm ci
+      run: npm install
 
     - name: Build Tauri app
       uses: tauri-apps/tauri-action@v0
