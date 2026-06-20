@@ -1,38 +1,46 @@
-# 🛡️ سرویس SSH VPN (سی شارپ)
+# 🛡️ SSH VPN - Tauri
 
 <div dir="rtl">
 
 [![Build Status](https://github.com/tahatehran/CSharp-SSH-VPN/actions/workflows/main.yml/badge.svg)](https://github.com/tahatehran/CSharp-SSH-VPN/actions/workflows/main.yml)
 [![Release](https://img.shields.io/github/v/release/tahatehran/CSharp-SSH-VPN?include_prereleases)](https://github.com/tahatehran/CSharp-SSH-VPN/releases)
+[![Tauri](https://img.shields.io/badge/Tauri-2.0-ffc107.svg)](https://tauri.app/)
+[![Rust](https://img.shields.io/badge/Rust-stable-orange.svg)](https://www.rust-lang.org/)
 
-یک نرم‌افزار حرفه‌ای تحت ویندوز که با زبان C# توسعه یافته و از پروتکل SSH برای ایجاد یک تونل امن (VPN) استفاده می‌کند. این برنامه با ایجاد یک تونل رمزنگاری شده و تنظیم خودکار پروکسی سیستم، دسترسی آزاد و امن به اینترنت را فراهم می‌سازد.
+یک نرم‌افزار حرفه‌ای ویندوز که از پروتکل SSH برای ایجاد تونل امن (VPN) استفاده می‌کند. با **Tauri (Rust + React)** توسعه یافته و تجربه‌ای مدرن و سریع ارائه می‌دهد.
 
 ---
 
 ## 🚀 ویژگی‌های کلیدی
 
-- **🎨 رابط کاربری مدرن**: طراحی تخت (Flat Design) با تمرکز بر سادگی و زیبایی.
-- **🌓 تم هوشمند**: پشتیبانی کامل از حالت‌های **تاریک (Dark)** و **روشن (Light)** هماهنگ با سیستم‌عامل.
-- **🌍 کاملاً دو زبانه**: پشتیبانی کامل از زبان‌های **فارسی** و **انگلیسی**.
-- **⚡ سرعت بالا**: بهینه‌سازی شده برای تونل‌زنی SSH روی پورت 9000 با کمترین تأخیر.
-- **🛠️ پیکربندی خودکار**: تنظیم خودکار تنظیمات SOCKS5 ویندوز بلافاصله پس از اتصال.
-- **🤖 اتوماسیون (CI/CD)**: استفاده از GitHub Actions برای ساخت خودکار، تست و مدیریت نسخه‌ها.
-- **📋 مدیریت فهرست سرورها**: ذخیره و مدیریت چندین تنظیمات سرور SSH.
-- **📊 تشخیص پینگ لحظه‌ای**: نظارت بر تاخیر سرور با بروزرسانی زنده پینگ.
-- **📈 مانیتورینگ پهنای باند**: ردیابی ترافیک دانلود/آپلود به صورت زمان واقعی.
+### نسخه مدرن (Tauri/Rust) ✨
+- **🎨 رابط کاربری مدرن** - React + Tailwind CSS با انیمیشن‌های Framer Motion
+- **⚡ عملکرد بالا** - بک‌اند Rust با Tokio async runtime
+- **📦 حجم کم** - ~10MB در مقابل ~50MB برای .NET Framework
+- **🌓 تم تطبیقی** - حالت تاریک/روشن/سیستم
+- **🌍 پشتیبانی RTL** - زبان فارسی و انگلیسی
+- **📊 نمودارهای لحظه‌ای** - مانیتورینگ پهنای باند با Recharts
+- **🌐 موقعیت سرور** - تشخیص موقعیت جغرافیایی سرور
+- **🔄 اتصال خودکار** - اتصال مجدد با backoff نمایی
+- **💾 ذخیره‌سازی JSON** - مدیریت مدرن تنظیمات
+
+---
 
 ## 📸 تصاویر محیط برنامه
 
-| تنظیمات و پیکربندی | رابط کاربری اصلی |
+| نسخه مدرن (Tauri) | نسخه کلاسیک (C#) |
 | :---: | :---: |
-| ![Settings](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/21a80309-2760-46df-b94c-bab82cce845d) | ![Main Interface](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/12b72ac7-92f6-47be-bdd5-abcabfc9458c) |
+| ![Tauri UI](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/12b72ac7-92f6-47be-bdd5-abcabfc9458c) | ![C# UI](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/21a80309-2760-46df-b94c-bab82cce845d) |
 
-## ⚙️ اتوماسیون پیشرفته (Workflows)
+---
 
-این مخزن دارای یک خط لوله CI/CD یکپارچه است که موارد زیر را مدیریت می‌کند:
+## ⚙️ خط لوله CI/CD
 
-1.  **ساخت خودکار**: فرآیند MSBuild خودکار برای هر تغییر، هدف‌گذاری شده روی .NET Framework 4.8.
-2.  **مدیریت نسخه‌ها**: تولید خودکار فایل‌های انتشار `ssh-vpn.exe` و `ssh-vpn.Setup.msi`.
+GitHub Actions workflow (`.github/workflows/main.yml`):
+- **ساخت Tauri**: Rust + React → فایل اجرایی ویندوز (.exe) و نصب‌کننده (.msi)
+- **ساخت خودکار**: فقط نسخه تغییر یافته ساخته می‌شود
+
+---
 
 ## 🛠 نقشه راه پروژه
 
@@ -40,20 +48,55 @@
 - [x] **فاز ۲**: بازطراحی رابط کاربری با تم‌های سفارشی و انیمیشن.
 - [x] **فاز ۳**: پشتیبانی از چند زبانه و راه‌اندازی خط لوله CI/CD.
 - [x] **فاز ۴**: مدیریت لیست سرورها، تشخیص پینگ لحظه‌ای و مانیتورینگ پهنای باند.
+- [x] **فاز ۵**: بهبود قابلیت اطمینان اتصال.
+- [x] **فاز ۶**: بازسازی Tauri - فرانت‌اند مدرن Rust + React ✅
+
+---
 
 ## 🛡️ امنیت و توسعه
 
-- **ذخیره‌سازی**: در حال حاضر اطلاعات حساس مانند رمز عبور SSH در ریجیستری ویندوز ذخیره می‌شوند.
-- **رمزنگاری AES**: به‌روزرسانی امنیتی برای رمزنگاری اطلاعات ذخیره شده در دست توسعه است.
-- **راهنما**: توسعه‌دهندگان می‌توانند برای استانداردهای کدنویسی به [AGENT.md](./AGENT.md) مراجعه کنند.
+- **ذخیره‌سازی**: رمزهای SSH در فایل‌های JSON ذخیره می‌شوند
+- **راهنما**: برای استانداردهای کدنویسی به [AGENT.md](./AGENT.md) مراجعه کنید
+
+---
 
 ## 📥 دانلود و نصب
 
-۱. به صفحه [Releases](https://github.com/tahatehran/CSharp-SSH-VPN/releases) بروید.
-۲. آخرین نسخه اجرایی `ssh-vpn.exe` را دانلود کنید، یا `ssh-vpn.Setup.msi` را نصب کنید.
-۳. `ssh-vpn.exe` را اجرا کنید یا نصب MSI را کامل کنید.
-۴. اطلاعات سرور SSH خود را در بخش تنظیمات وارد نمایید.
-۵. از فهرست سرورها برای مدیریت چندین اتصال استفاده کنید.
+### 🆕 نسخه مدرن (توصیه شده)
+1. به صفحه [Releases](https://github.com/tahatehran/CSharp-SSH-VPN/releases) بروید
+2. `SSH VPN Tauri.exe` یا نصب‌کننده `.msi` را دانلود کنید
+3. اجرا کنید و از رابط مدرن لذت ببرید!
+
+---
+
+## 🔧 توسعه
+
+```bash
+cd ssh-vpn-tauri
+npm install
+npm run tauri dev    # توسعه
+npm run tauri build  # ساخت نسخه نهایی
+```
+
+---
+
+## 📁 ساختار پروژه
+
+```
+CSharp-SSH-VPN/
+├── ssh-vpn-tauri/     # اپلیکیشن اصلی (Rust + React)
+├── .github/           # workflow های CI/CD
+├── AGENT.md           # راهنمای توسعه‌دهندگان
+└── README.md          # مستندات انگلیسی
+```
+
+---
+
+## ارتباط با ما
+
+- **ایمیل:** [info@movtigroup.ir](mailto:info@movtigroup.ir)
+- **وب‌سایت:** [movtigroup.ir](https://movtigroup.ir)
+- **گیت‌هاب:** [https://github.com/movtigroup](https://github.com/movtigroup)
 
 ---
 
