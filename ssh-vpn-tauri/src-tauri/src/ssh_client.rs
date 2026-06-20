@@ -309,7 +309,13 @@ impl SshClient {
     /// Start background task to poll SOCKS connections
     pub fn socks_proxy_loop(socks_handle: SocksProxyHandle) {
         info!("SOCKS proxy loop started");
+        let mut check_count = 0;
         while !socks_handle.should_stop.load(Ordering::SeqCst) {
+            check_count += 1;
+            if check_count % 100 == 0 {
+                info!("SOCKS proxy loop still running (check #{})", check_count);
+            }
+            
             let listener_guard = match socks_handle.listener.lock() {
                 Ok(guard) => guard,
                 Err(e) => {
@@ -322,12 +328,14 @@ impl SshClient {
             if let Some(ref listener) = *listener_guard {
                 match listener.accept() {
                     Ok((mut client_stream, client_addr)) => {
-                        info!("SOCKS connection from {}", client_addr);
+                        info!("SOCKS connection ACCEPTED from {}", client_addr);
                         let session = Arc::clone(&socks_handle.session);
                         drop(listener_guard); // Release lock before spawning thread
                         std::thread::spawn(move || {
-                            if let Err(e) = Self::handle_socks5_connection_internal(&mut client_stream, session) {
-                                warn!("SOCKS5 handling error: {}", e);
+                            info!("Starting SOCKS5 handler thread for {}", client_addr);
+                            match Self::handle_socks5_connection_internal(&mut client_stream, session) {
+                                Ok(_) => info!("SOCKS5 handler completed for {}", client_addr),
+                                Err(e) => warn!("SOCKS5 handling error for {}: {}", client_addr, e),
                             }
                         });
                     }
@@ -356,9 +364,12 @@ impl SshClient {
         client_stream: &mut std::net::TcpStream,
         session: Arc<Mutex<Option<Session>>>,
     ) -> Result<()> {
+        info!("Starting SOCKS5 connection handler");
+        
         // SOCKS5 handshake
         let mut buf = [0u8; 2];
         client_stream.read_exact(&mut buf)?;
+        info!("SOCKS5 handshake received: version={}, n_methods={}", buf[0], buf[1]);
         
         if buf[0] != 0x05 {
             return Err(SshVpnError::SocksProxyError("Invalid SOCKS version".to_string()));
@@ -370,10 +381,12 @@ impl SshClient {
         
         // We only support NO_AUTH (0x00)
         client_stream.write_all(&[0x05, 0x00])?;
+        info!("SOCKS5 handshake response sent");
         
         // SOCKS5 request
         let mut request = [0u8; 4];
         client_stream.read_exact(&mut request)?;
+        info!("SOCKS5 request: cmd={}, addr_type={}", request[1], request[3]);
         
         if request[0] != 0x05 {
             return Err(SshVpnError::SocksProxyError("Invalid SOCKS version in request".to_string()));
@@ -437,9 +450,13 @@ impl SshClient {
             }
         };
         
+        info!("Opening SSH channel to {}:{}", dst_host, dst_port);
+        
         // Open SSH channel for direct TCP
         let mut channel = ssh_session.channel_direct_tcpip(&dst_host, dst_port, None)
             .map_err(|e| SshVpnError::SocksProxyError(format!("Failed to open SSH channel: {}", e)))?;
+        
+        info!("SSH channel opened successfully!");
         
         // Send success response
         client_stream.write_all(&[0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])?;
@@ -449,10 +466,16 @@ impl SshClient {
         // Drop the lock before copying data
         drop(session_guard);
         
+        // Set timeouts to prevent infinite blocking
+        client_stream.set_read_timeout(Some(std::time::Duration::from_millis(100))).ok();
+        
         // Copy data between client and SSH channel
         let mut buf = [0u8; 8192];
+        let mut consecutive_timeouts = 0;
+        const MAX_IDLE_LOOPS: u32 = 300; // 30 seconds of no activity
+        
         loop {
-            // Non-blocking read from client
+            // Read from client and write to SSH channel
             match client_stream.read(&mut buf) {
                 Ok(0) => {
                     info!("Client closed connection");
@@ -460,9 +483,10 @@ impl SshClient {
                 }
                 Ok(n) => {
                     channel.write_all(&buf[..n])?;
+                    consecutive_timeouts = 0;
                 }
                 Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                    // No data available, try reading from channel
+                    // Will check channel next
                 }
                 Err(e) => {
                     warn!("Error reading from client: {}", e);
@@ -470,26 +494,38 @@ impl SshClient {
                 }
             }
             
-            // Non-blocking read from channel
+            // Read from SSH channel and write to client
             match channel.read(&mut buf) {
                 Ok(0) => {
-                    info!("SSH channel closed");
+                    info!("SSH channel closed by remote");
                     break;
                 }
                 Ok(n) => {
                     client_stream.write_all(&buf[..n])?;
+                    consecutive_timeouts = 0;
                 }
-                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                    // No data available
+                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock 
+                       || e.kind() == std::io::ErrorKind::TimedOut => {
+                    consecutive_timeouts += 1;
+                    if consecutive_timeouts >= MAX_IDLE_LOOPS {
+                        info!("Connection idle timeout, closing tunnel");
+                        break;
+                    }
                 }
                 Err(e) => {
                     warn!("Error reading from SSH channel: {}", e);
                     break;
                 }
             }
+            
+            // Small sleep to prevent CPU spinning when both sides have no data
+            if consecutive_timeouts > 0 {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
         }
         
-        channel.close()?;
+        let _ = channel.close();
+        let _ = channel.wait_closed();
         info!("SOCKS5 tunnel closed for {}:{}", dst_host, dst_port);
         Ok(())
     }

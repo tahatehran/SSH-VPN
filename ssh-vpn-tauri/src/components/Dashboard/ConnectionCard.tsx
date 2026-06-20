@@ -17,6 +17,7 @@ export default function ConnectionCard() {
   } = useAppStore();
   
   const [selectedServerId, setSelectedServerId] = useState<string | null>(activeServerId);
+  const [showDebug, setShowDebug] = useState(false);
 
   const isConnected = connectionStatus.state === 'connected';
   const selectedServer = servers.find(s => s.id === selectedServerId);
@@ -50,14 +51,99 @@ export default function ConnectionCard() {
     return t('app.connect');
   };
 
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getConnectionDuration = () => {
+    if (!connectionStatus.connected_at) return 'N/A';
+    const connected = new Date(connectionStatus.connected_at).getTime();
+    const now = Date.now();
+    const seconds = Math.floor((now - connected) / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    if (hours > 0) return `${hours}h ${minutes % 60}m`;
+    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+    return `${seconds}s`;
+  };
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex-row justify-between items-center">
         <h3 className="text-lg font-semibold text-[var(--text-primary)]">
           {isConnected ? t('app.connected') : t('app.notConnected')}
         </h3>
+        <button
+          onClick={() => setShowDebug(!showDebug)}
+          className={`p-2 rounded-lg transition-colors ${
+            showDebug 
+              ? 'bg-[var(--accent)] text-white' 
+              : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--border)]'
+          }`}
+          title="Debug Info"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Debug Panel */}
+        {showDebug && (
+          <div className="p-3 bg-[var(--bg-tertiary)] rounded-lg text-xs font-mono space-y-2">
+            <div className="font-bold text-[var(--text-primary)] mb-2">🔧 Debug Info</div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+              <span className="text-[var(--text-secondary)]">Status:</span>
+              <span className={`font-bold ${
+                isConnected ? 'text-[var(--success)]' : 'text-[var(--error)]'
+              }`}>
+                {isConnected ? 'CONNECTED ✓' : connectionStatus.state}
+              </span>
+              
+              <span className="text-[var(--text-secondary)]">SOCKS5 Port:</span>
+              <span className="text-[var(--text-primary)]">{connectionStatus.local_port}</span>
+              
+              <span className="text-[var(--text-secondary)]">Server:</span>
+              <span className="text-[var(--text-primary)]">
+                {connectionStatus.server?.host || 'N/A'}
+              </span>
+              
+              <span className="text-[var(--text-secondary)]">Duration:</span>
+              <span className="text-[var(--text-primary)]">{getConnectionDuration()}</span>
+              
+              <span className="text-[var(--text-secondary)]">Bytes Sent:</span>
+              <span className="text-[var(--accent)]">{formatBytes(connectionStatus.bytes_sent)}</span>
+              
+              <span className="text-[var(--text-secondary)]">Bytes Recv:</span>
+              <span className="text-[var(--success)]">{formatBytes(connectionStatus.bytes_received)}</span>
+            </div>
+            
+            {isConnected && (
+              <div className="mt-3 p-2 bg-[var(--bg-secondary)] rounded border border-[var(--border)]">
+                <div className="text-[var(--text-secondary)] mb-1">Browser Proxy Settings:</div>
+                <div className="text-[var(--text-primary)]">
+                  Host: <span className="font-bold">127.0.0.1</span>
+                </div>
+                <div className="text-[var(--text-primary)]">
+                  Port: <span className="font-bold">{connectionStatus.local_port}</span>
+                </div>
+                <div className="text-[var(--text-secondary)] mt-1">Protocol: SOCKS5</div>
+              </div>
+            )}
+            
+            {!isConnected && (
+              <div className="mt-2 text-[var(--warning)]">
+                ⚠️ Connect to a server to start the SOCKS5 proxy
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Server Selector */}
         <div>
           <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
