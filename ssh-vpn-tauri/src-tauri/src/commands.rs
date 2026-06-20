@@ -80,9 +80,9 @@ pub async fn disconnect(state: State<'_, AppState>) -> Result<(), String> {
 
 /// Get connection status
 #[tauri::command]
-pub async fn get_status(state: State<'_, AppState>) -> ConnectionStatus {
+pub async fn get_status(state: State<'_, AppState>) -> Result<ConnectionStatus, String> {
     let client = state.ssh_client.lock().await;
-    client.get_status()
+    Ok(client.get_status())
 }
 
 /// Get bandwidth stats
