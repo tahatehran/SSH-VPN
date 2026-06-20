@@ -53,4 +53,3 @@ jobs:
           Download the installer and run it.
         releaseDraft: false
         prerelease: false
-        artifactsPath: ''

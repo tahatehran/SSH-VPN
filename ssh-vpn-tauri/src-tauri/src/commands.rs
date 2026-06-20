@@ -1,10 +1,10 @@
-use crate::error::SshVpnError;
 use crate::ssh_client::{ConnectionStatus, ServerInfo};
 use crate::storage::{AppSettings, Storage};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tauri::State;
+use tokio::sync::Mutex;
 use tracing::{error, info};
 use uuid::Uuid;
 
@@ -60,16 +60,16 @@ pub async fn connect(
         .map_err(|e| e.to_string())?;
     
     // Use the SSH client from AppState
-    let mut client = state.ssh_client.lock().map_err(|e| e.to_string())?;
+    let mut client = state.ssh_client.lock().await;
     client.connect(&server).await.map_err(|e| e.to_string())
 }
 
 /// Disconnect from SSH server
 #[tauri::command]
-pub fn disconnect(state: State<'_, AppState>) -> Result<(), String> {
+pub async fn disconnect(state: State<'_, AppState>) -> Result<(), String> {
     info!("Disconnecting");
     
-    let mut client = state.ssh_client.lock().map_err(|e| e.to_string())?;
+    let mut client = state.ssh_client.lock().await;
     client.disconnect().map_err(|e| e.to_string())?;
     
     state.storage.log_connection("DISCONNECTED", "N/A")
@@ -80,9 +80,9 @@ pub fn disconnect(state: State<'_, AppState>) -> Result<(), String> {
 
 /// Get connection status
 #[tauri::command]
-pub fn get_status(state: State<'_, AppState>) -> ConnectionStatus {
-    let client = state.ssh_client.lock().unwrap_or_else(|e| e.into_inner());
-    client.get_status()
+pub async fn get_status(state: State<'_, AppState>) -> Result<ConnectionStatus, String> {
+    let client = state.ssh_client.lock().await;
+    Ok(client.get_status())
 }
 
 /// Get bandwidth stats
@@ -122,10 +122,11 @@ pub fn update_server(
     state: State<'_, AppState>,
     server: ServerInfo,
 ) -> Result<(), String> {
+    let server_id = server.id.clone();
     state.storage.update_server(server)
         .map_err(|e| e.to_string())?;
     
-    info!("Updated server: {}", server.id);
+    info!("Updated server: {}", server_id);
     Ok(())
 }
 
