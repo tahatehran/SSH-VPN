@@ -7,8 +7,8 @@ on:
     branches: [ "master" ]
   workflow_dispatch:
   workflow_run:
-    workflows: [ "Release Management" ]
-    types: [ completed ]
+    workflows: ["Release Management"]
+    types: [completed]
 
 jobs:
   # Build Tauri application
@@ -25,6 +25,9 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
+      with:
+        # Fetch all history for tags and branches
+        fetch-depth: 0
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
