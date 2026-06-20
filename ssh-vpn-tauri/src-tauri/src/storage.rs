@@ -18,6 +18,7 @@ pub struct AppSettings {
     pub custom_dns: Vec<String>,
     pub check_interval_sec: u64,
     pub max_ping_ms: u32,
+    pub socks_port: u16,  // Local SOCKS5 proxy port
 }
 
 impl Default for AppSettings {
@@ -31,6 +32,7 @@ impl Default for AppSettings {
             custom_dns: vec!["1.1.1.1".to_string(), "8.8.8.8".to_string()],
             check_interval_sec: 30,
             max_ping_ms: 200,
+            socks_port: 9000,
         }
     }
 }

@@ -145,6 +145,24 @@ export default function Settings() {
         <CardContent className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+              SOCKS5 Proxy Port
+            </label>
+            <input
+              type="number"
+              value={settings.socks_port}
+              onChange={(e) => saveSettings({ ...settings, socks_port: parseInt(e.target.value) || 9000 })}
+              className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-lg 
+                         text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+              min={1024}
+              max={65535}
+            />
+            <p className="text-xs text-[var(--text-secondary)] mt-1">
+              Local port for SOCKS5 proxy (default: 9000)
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
               Check Interval (seconds)
             </label>
             <input

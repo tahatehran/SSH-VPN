@@ -1,7 +1,7 @@
 use crate::error::{Result, SshVpnError};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use ssh2::{Channel, Session};
+use ssh2::Session;
 use std::io::{Read, Write};
 use std::net::{TcpStream, SocketAddr, ToSocketAddrs};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -153,6 +153,11 @@ impl SshClient {
             should_disconnect: Arc::new(AtomicBool::new(false)),
             reconnect_config: ReconnectConfig::default(),
         }
+    }
+
+    /// Set the local SOCKS proxy port
+    pub fn set_local_port(&mut self, port: u16) {
+        self.status.local_port = port;
     }
 
     /// Connect to SSH server with auto-reconnect
@@ -433,7 +438,7 @@ impl SshClient {
         };
         
         // Open SSH channel for direct TCP
-        let mut channel = ssh_session.channel_direct_tcpip(&dst_host, dst_port)
+        let mut channel = ssh_session.channel_direct_tcpip(&dst_host, dst_port, None)
             .map_err(|e| SshVpnError::SocksProxyError(format!("Failed to open SSH channel: {}", e)))?;
         
         // Send success response

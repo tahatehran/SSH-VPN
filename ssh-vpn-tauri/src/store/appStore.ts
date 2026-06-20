@@ -53,6 +53,7 @@ const defaultSettings: AppSettings = {
   custom_dns: ['1.1.1.1', '8.8.8.8'],
   check_interval_sec: 30,
   max_ping_ms: 200,
+  socks_port: 9000,
 };
 
 const defaultConnectionStatus: ConnectionStatus = {
