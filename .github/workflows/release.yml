@@ -4,17 +4,6 @@ on:
   push:
     branches:
       - master
-  workflow_dispatch:
-    inputs:
-      version_type:
-        description: 'Version bump type (major, minor, patch)'
-        required: false
-        default: 'patch'
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
 
 jobs:
   bump-version:
@@ -29,67 +18,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine version bump type
-        id: bump
-        run: |
-          # Check commit messages for conventional commit prefixes
-          COMMITS=$(git log --format="%s" HEAD~10..HEAD)
-          
-          MAJOR=false
-          MINOR=false
-          
-          for commit in $COMMITS; do
-            if echo "$commit" | grep -qE "^[A-Za-z]+!:"; then
-              MAJOR=true
-              MINOR=true
-              break
-            elif echo "$commit" | grep -qE "^feat|enhance|improvement"; then
-              MINOR=true
-            fi
-          done
-          
-          if [ "$MAJOR" = true ]; then
-            echo "bump_type=major" >> $GITHUB_OUTPUT
-          elif [ "$MINOR" = true ]; then
-            echo "bump_type=minor" >> $GITHUB_OUTPUT
-          else
-            echo "bump_type=patch" >> $GITHUB_OUTPUT
-          fi
-          
-          echo "Using ${{ steps.bump.outputs.bump_type }} bump based on commits"
-
-      - name: Bump version
+      - name: Bump version (0.0.1 patch increment)
         id: version
         run: |
           CURRENT_VERSION=$(grep '"version"' ssh-vpn-tauri/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
           echo "Current version: $CURRENT_VERSION"
           
-          BUMP_TYPE=${{ github.event.inputs.version_type || steps.bump.outputs.bump_type }}
-          echo "Bump type: $BUMP_TYPE"
-          
           # Parse version parts
           IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
           
-          case $BUMP_TYPE in
-            major)
-              new_major=$((major + 1))
-              new_minor=0
-              new_patch=0
-              ;;
-            minor)
-              new_major=$major
-              new_minor=$((minor + 1))
-              new_patch=0
-              ;;
-            patch)
-              new_major=$major
-              new_minor=$minor
-              new_patch=$((patch + 1))
-              ;;
-          esac
+          # Always increment patch by 1 (0.0.1 style)
+          new_patch=$((patch + 1))
           
-          NEW_VERSION="$new_major.$new_minor.$new_patch"
-          echo "New version: $NEW_VERSION"
+          NEW_VERSION="$major.$minor.$new_patch"
+          echo "New version: $NEW_VERSION (+0.0.1)"
           
           # Update package.json
           sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" ssh-vpn-tauri/package.json
@@ -108,71 +50,6 @@ jobs:
           [ -f ssh-vpn-tauri/src-tauri/Cargo.toml ] && git add ssh-vpn-tauri/src-tauri/Cargo.toml
           git commit -m "chore: bump version to $NEW_VERSION"
           git push origin master
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: Release ${{ steps.version.outputs.tag }}
-          generate_release_notes: true
-          draft: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  manual-release:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Get current version
-        id: version
-        run: |
-          CURRENT_VERSION=$(grep '"version"' ssh-vpn-tauri/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
-          
-          BUMP_TYPE=${{ github.event.inputs.version_type }}
-          IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
-          
-          case $BUMP_TYPE in
-            major)
-              new_major=$((major + 1))
-              new_minor=0
-              new_patch=0
-              ;;
-            minor)
-              new_major=$major
-              new_minor=$((minor + 1))
-              new_patch=0
-              ;;
-            patch)
-              new_major=$major
-              new_minor=$minor
-              new_patch=$((patch + 1))
-              ;;
-          esac
-          
-          NEW_VERSION="$new_major.$new_minor.$new_patch"
-          echo "New version: $NEW_VERSION"
-          
-          # Update package.json
-          sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" ssh-vpn-tauri/package.json
-          
-          # Update Cargo.toml if exists
-          if [ -f ssh-vpn-tauri/src-tauri/Cargo.toml ]; then
-            sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" ssh-vpn-tauri/src-tauri/Cargo.toml
-          fi
-          
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
-          
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add ssh-vpn-tauri/package.json
-          [ -f ssh-vpn-tauri/src-tauri/Cargo.toml ] && git add ssh-vpn-tauri/src-tauri/Cargo.toml
-          git commit -m "chore: bump version to $NEW_VERSION"
-          git tag ${{ steps.version.outputs.tag }}
-          git push origin master --tags
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
