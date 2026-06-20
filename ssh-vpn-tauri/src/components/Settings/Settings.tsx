@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader } from '../UI/Card';
 import { Toggle } from '../UI/Toggle';
+import { Button } from '../UI/Button';
 import { useAppStore } from '../../store/appStore';
 
 export default function Settings() {
   const { t } = useTranslation();
   const { settings, saveSettings, setTheme, setLanguage, theme, language } = useAppStore();
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState('');
 
   const handleToggle = async (key: keyof typeof settings, value: boolean) => {
     const newSettings = { ...settings, [key]: value };
@@ -22,9 +26,43 @@ export default function Settings() {
     saveSettings({ ...settings, language: newLanguage });
   };
 
+  const checkForUpdates = async () => {
+    setCheckingUpdate(true);
+    setUpdateMessage('');
+    try {
+      // Open GitHub releases page
+      window.open('https://github.com/tahatehran/CSharp-SSH-VPN/releases', '_blank');
+      setUpdateMessage('Please download the latest version from GitHub');
+    } catch (e) {
+      setUpdateMessage('Failed to check for updates');
+    }
+    setCheckingUpdate(false);
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
       <h2 className="text-2xl font-bold text-[var(--text-primary)]">{t('settings.title')}</h2>
+
+      {/* Update Section */}
+      <Card>
+        <CardHeader>
+          <h3 className="text-lg font-semibold text-[var(--text-primary)]">Updates</h3>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-[var(--text-secondary)]">Current Version</p>
+              <p className="text-lg font-bold text-[var(--text-primary)]">v1.3.2</p>
+            </div>
+            <Button onClick={checkForUpdates} isLoading={checkingUpdate}>
+              Check for Updates
+            </Button>
+          </div>
+          {updateMessage && (
+            <p className="text-sm text-[var(--text-secondary)]">{updateMessage}</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* General Settings */}
       <Card>
