@@ -40,25 +40,27 @@ This repository features a unified CI/CD pipeline (`.github/workflows/main.yml`)
 - [x] **Phase 3**: Multi-language support (EN/FA) and CI/CD pipeline setup.
 - [x] **Phase 4**: Server list management, real-time ping detection, and bandwidth monitoring.
 - [x] **Phase 5**: Connection reliability hardening with timeout-based SSH connects, safe disconnect cleanup, UI-thread marshaling, bandwidth monitor lifecycle management, and stronger registry/proxy error handling.
-- [ ] **Phase 6**: Tauri rebuild - Modern Rust + React frontend with enhanced features
+- [x] **Phase 6**: Tauri rebuild - Modern Rust + React frontend with enhanced features ✅
 
 ## 🛡️ Security & Development
 
-- **Configuration**: Sensitive fields like SSH passwords are currently stored in the Windows Registry.
-- **AES Encryption**: A security update to encrypt stored credentials is in development.
+- **Configuration**: Sensitive fields like SSH passwords are stored in the Windows Registry (legacy) or JSON files (Tauri).
 - **Guidelines**: Contributors should refer to [AGENT.md](./AGENT.md) for coding standards.
 
 ## 📥 Download & Installation
 
-1.  Go to the [Releases](https://github.com/tahatehran/CSharp-SSH-VPN/releases) page.
-2.  Download the latest `ssh-vpn.exe` Release executable, or install `ssh-vpn.Setup.msi`.
-3.  Run `ssh-vpn.exe` or complete the MSI installation.
-4.  Configure your SSH server details in the settings.
-5.  Use the server list to manage multiple connections.
+### Legacy Version (C#)
+1. Go to the [Releases](https://github.com/tahatehran/CSharp-SSH-VPN/releases) page.
+2. Download the latest `ssh-vpn-csharp.zip`.
+3. Extract and run `ssh-vpn.exe`.
+
+### Modern Version (Tauri)
+1. Download `SSH VPN Tauri.exe` from releases.
+2. Run the installer or executable.
 
 ---
 
-## 🚀 New: Tauri Rebuild (ssh-vpn-tauri)
+## 🚀 Tauri Rebuild (ssh-vpn-tauri)
 
 A modern rebuild of the SSH VPN application using **Rust + React** with Tauri is available in the `ssh-vpn-tauri/` directory.
 
