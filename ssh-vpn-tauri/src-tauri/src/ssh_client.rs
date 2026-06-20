@@ -155,6 +155,11 @@ impl SshClient {
         }
     }
 
+    /// Set the local SOCKS proxy port
+    pub fn set_local_port(&mut self, port: u16) {
+        self.status.local_port = port;
+    }
+
     /// Connect to SSH server with auto-reconnect
     pub async fn connect(&mut self, server: &ServerInfo) -> Result<ConnectionStatus> {
         self.should_disconnect.store(false, Ordering::SeqCst);

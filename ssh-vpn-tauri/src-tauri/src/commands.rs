@@ -59,8 +59,13 @@ pub async fn connect(
     state.storage.log_connection("CONNECTING", &server.name)
         .map_err(|e| e.to_string())?;
     
+    // Load settings to get socks_port
+    let settings = state.storage.load_settings()
+        .map_err(|e| e.to_string())?;
+    
     // Use the SSH client from AppState
     let mut client = state.ssh_client.lock().await;
+    client.set_local_port(settings.socks_port);
     client.connect(&server).await.map_err(|e| e.to_string())
 }
 
