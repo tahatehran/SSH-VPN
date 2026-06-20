@@ -22,7 +22,7 @@ jobs:
         id: version
         run: |
           CURRENT_VERSION=$(grep '"version"' ssh-vpn-tauri/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
-          echo "Current version: $CURRENT_VERSION"
+          echo "Current version from package.json: $CURRENT_VERSION"
           
           # Parse version parts
           IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
@@ -33,10 +33,10 @@ jobs:
           NEW_VERSION="$major.$minor.$new_patch"
           echo "New version: $NEW_VERSION (+0.0.1)"
           
-          # Update package.json
+          # Update package.json (tauri-action reads from here!)
           sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" ssh-vpn-tauri/package.json
           
-          # Update Cargo.toml if exists
+          # Also update Cargo.toml for consistency
           if [ -f ssh-vpn-tauri/src-tauri/Cargo.toml ]; then
             sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" ssh-vpn-tauri/src-tauri/Cargo.toml
           fi
@@ -46,8 +46,7 @@ jobs:
           
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add ssh-vpn-tauri/package.json
-          [ -f ssh-vpn-tauri/src-tauri/Cargo.toml ] && git add ssh-vpn-tauri/src-tauri/Cargo.toml
+          git add ssh-vpn-tauri/package.json ssh-vpn-tauri/src-tauri/Cargo.toml
           git commit -m "chore: bump version to $NEW_VERSION"
           git push origin master
 
