@@ -102,7 +102,10 @@ export default function ConnectionCard() {
               <span className={`font-bold ${
                 isConnected ? 'text-[var(--success)]' : 'text-[var(--error)]'
               }`}>
-                {isConnected ? 'CONNECTED ✓' : connectionStatus.state}
+                {isConnected ? 'CONNECTED ✓' : 
+                 typeof connectionStatus.state === 'string' 
+                   ? connectionStatus.state 
+                   : 'ERROR'}
               </span>
               
               <span className="text-[var(--text-secondary)]">SOCKS5 Port:</span>

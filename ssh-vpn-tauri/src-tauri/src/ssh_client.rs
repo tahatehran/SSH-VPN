@@ -525,7 +525,7 @@ impl SshClient {
         }
         
         let _ = channel.close();
-        let _ = channel.wait_closed();
+        let _ = channel.wait_close();
         info!("SOCKS5 tunnel closed for {}:{}", dst_host, dst_port);
         Ok(())
     }
