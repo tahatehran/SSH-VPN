@@ -18,7 +18,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Skip if already a version bump commit
+        id: skip_check
+        run: |
+          COMMIT_MSG=$(git log -1 --format=%s)
+          if echo "$COMMIT_MSG" | grep -q "chore: bump version"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "Skipping - this is already a version bump commit"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Bump version (0.0.1 patch increment)
+        if: steps.skip_check.outputs.skip == 'false'
         id: version
         run: |
           CURRENT_VERSION=$(grep '"version"' ssh-vpn-tauri/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
@@ -56,6 +68,7 @@ jobs:
           git push origin master
 
       - name: Create GitHub Release
+        if: steps.skip_check.outputs.skip == 'false'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.tag }}
