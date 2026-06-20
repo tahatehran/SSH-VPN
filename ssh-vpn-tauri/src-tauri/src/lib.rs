@@ -11,5 +11,5 @@ pub use commands::{
 };
 pub use bandwidth::{BandwidthStats, BandwidthMonitor};
 pub use error::{Result, SshVpnError};
-pub use ssh_client::{ConnectionState, ConnectionStatus, ServerInfo};
+pub use ssh_client::{ConnectionState, ConnectionStatus, ServerInfo, SocksProxyHandle};
 pub use storage::{AppSettings, Storage};
