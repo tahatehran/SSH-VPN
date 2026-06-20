@@ -57,7 +57,6 @@ jobs:
           fetch-depth: 0
 
       - name: Generate Changelog
-        id: changelog
         run: |
           # Get previous tag
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
@@ -71,8 +70,11 @@ jobs:
             CHANGELOG=$(git log $PREV_TAG..HEAD --oneline --format="* %s")
           fi
           
-          # Use a JSON file to safely store multi-line output
-          printf '{"changelog": "## %s\n\n%s"}' "$CURRENT_TAG" "$CHANGELOG" > changelog.json
+          # Use jq to create properly escaped JSON
+          jq -n \
+            --arg title "## $CURRENT_TAG" \
+            --arg body "$CHANGELOG" \
+            '{title: $title, body: $body}' > changelog.json
           cat changelog.json
 
       - name: Create Release Issue
@@ -84,6 +86,6 @@ jobs:
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: 'Release Notes Draft',
-              body: 'Draft release notes:\n\n' + changelogData.changelog
+              title: 'Release Notes Draft: ' + changelogData.title,
+              body: changelogData.body
             })
