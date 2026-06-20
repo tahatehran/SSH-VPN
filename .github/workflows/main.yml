@@ -3,11 +3,6 @@ name: Build and Release Application
 on:
   push:
     branches: [ "master" ]
-    paths:
-      - 'ssh-vpn-tauri/**'
-      - '!ssh-vpn-tauri/src-tauri/tauri.conf.json'
-      - '!ssh-vpn-tauri/src-tauri/Cargo.toml'
-      - '!ssh-vpn-tauri/package.json'
   pull_request:
     branches: [ "master" ]
   workflow_dispatch:

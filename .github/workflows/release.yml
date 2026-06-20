@@ -66,14 +66,3 @@ jobs:
           git add ssh-vpn-tauri/package.json ssh-vpn-tauri/src-tauri/tauri.conf.json ssh-vpn-tauri/src-tauri/Cargo.toml
           git commit -m "chore: bump version to $NEW_VERSION"
           git push origin master
-
-      - name: Create GitHub Release
-        if: steps.skip_check.outputs.skip == 'false'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: Release ${{ steps.version.outputs.tag }}
-          generate_release_notes: true
-          draft: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
