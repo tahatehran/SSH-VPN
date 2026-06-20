@@ -1,13 +1,16 @@
-# 🛡️ SSH VPN - Tauri
+# 🛡️ SSH VPN
+
+[English](README.md) | [简体中文](README.zh.md) | [فارسی](Readme.fa.md)
 
 <div dir="rtl">
 
 [![Build Status](https://github.com/tahatehran/CSharp-SSH-VPN/actions/workflows/main.yml/badge.svg)](https://github.com/tahatehran/CSharp-SSH-VPN/actions/workflows/main.yml)
 [![Release](https://img.shields.io/github/v/release/tahatehran/CSharp-SSH-VPN?include_prereleases)](https://github.com/tahatehran/CSharp-SSH-VPN/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-ffc107.svg)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/Rust-stable-orange.svg)](https://www.rust-lang.org/)
 
-یک نرم‌افزار حرفه‌ای ویندوز که از پروتکل SSH برای ایجاد تونل امن (VPN) استفاده می‌کند. با **Tauri (Rust + React)** توسعه یافته و تجربه‌ای مدرن و سریع ارائه می‌دهد.
+یک نرم‌افزار حرفه‌ای ویندوز که از پروتکل SSH برای ایجاد تونل امن (VPN) استفاده می‌کند. با **Tauri (Rust + React)** توسعه یافته و تجربه‌ای مدرن، سریع و امن ارائه می‌دهد.
 
 ---
 
@@ -30,15 +33,15 @@
 
 | نسخه مدرن (Tauri) | نسخه کلاسیک (C#) |
 | :---: | :---: |
-| ![Tauri UI](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/12b72ac7-92f6-47be-bdd5-abcabfc9458c) | ![C# UI](https://private-user-images.githubusercontent.com/67155909/313697797-12b72ac7-92f6-47be-bdd5-abcabfc9458c.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3ODE5NDgyNzYsIm5iZiI6MTc4MTk0Nzk3NiwicGF0aCI6Ii82NzE1NTkwOS8zMTM2OTc3OTctMTJiNzJhYzctOTJmNi00N2JlLWJkZDUtYWJjYWJmYzk0NThjLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjA2MjAlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwNjIwVDA5MzI1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTc1NTIxYWQ3NjQzZTI2MDQ0NjVkZmU2YWY1ODkwZWQ4OWY3YmMwZWE1NDIyOGU0ZjQ2MWE4MTJmYzZkZDA0ZWEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnJlc3BvbnNlLWNvbnRlbnQtdHlwZT1pbWFnZSUyRnBuZyJ9.isFSrICjIfrXB1ujQz8wHGmoykqrcIYkw37IXDZRIVk) |
+| ![Tauri UI](https://private-user-images.githubusercontent.com/67155909/313697797-12b72ac7-92f6-47be-bdd5-abcabfc9458c.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3ODE5NDgyNzYsIm5iZiI6MTc4MTk0Nzk3NiwicGF0aCI6Ii82NzE1NTkwOS8zMTM2OTc3OTctMTJiNzJhYzctOTJmNi00N2JlLWJkZDUtYWJjYWJmYzk0NThjLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjA2MjAlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwNjIwVDA5MzI1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTc1NTIxYWQ3NjQzZTI2MDQ0NjVkZmU2YWY1ODkwZWQ4OWY3YmMwZWE1NDIyOGU0ZjQ2MWE4MTJmYzZkZDA0ZWEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnJlc3BvbnNlLWNvbnRlbnQtdHlwZT1pbWFnZSUyRnBuZyJ9.isFSrICjIfrXB1ujQz8wHGmoykqrcIYkw37IXDZRIVk) | ![C# UI](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/21a80309-2760-46df-b94c-bab82cce845d) |
 
 ---
 
 ## ⚙️ خط لوله CI/CD
 
-GitHub Actions workflow (`.github/workflows/main.yml`):
-- **ساخت Tauri**: Rust + React → فایل اجرایی ویندوز (.exe) و نصب‌کننده (.msi)
-- **ساخت خودکار**: فقط نسخه تغییر یافته ساخته می‌شود
+GitHub Actions workflows:
+- **main.yml**: ساخت و انتشار اپلیکیشن Tauri هنگام push به master
+- **release.yml**: تگ خودکار انتشار و تولید changelog
 
 ---
 
@@ -62,10 +65,9 @@ GitHub Actions workflow (`.github/workflows/main.yml`):
 
 ## 📥 دانلود و نصب
 
-### 🆕 نسخه مدرن (توصیه شده)
 1. به صفحه [Releases](https://github.com/tahatehran/CSharp-SSH-VPN/releases) بروید
-2. `SSH VPN Tauri.exe` یا نصب‌کننده `.msi` را دانلود کنید
-3. اجرا کنید و از رابط مدرن لذت ببرید!
+2. `SSH VPN.exe` یا نصب‌کننده `.msi` را دانلود کنید
+3. اجرا کنید و لذت ببرید!
 
 ---
 
@@ -87,22 +89,16 @@ CSharp-SSH-VPN/
 ├── ssh-vpn-tauri/     # اپلیکیشن اصلی (Rust + React)
 ├── .github/           # workflow های CI/CD
 ├── AGENT.md           # راهنمای توسعه‌دهندگان
-└── README.md          # مستندات انگلیسی
+├── CONTRIBUTING.md    # راهنمای مشارکت
+├── README.md          # مستندات انگلیسی
+├── Readme.fa.md       # مستندات فارسی
+└── LICENSE            # لایسنس MIT
 ```
-
----
-
-## ارتباط با ما
-
-- **ایمیل:** [info@movtigroup.ir](mailto:info@movtigroup.ir)
-- **وب‌سایت:** [movtigroup.ir](https://movtigroup.ir)
-- **گیت‌هاب:** [https://github.com/movtigroup](https://github.com/movtigroup)
 
 ---
 
 ### 🤝 حمایت و پشتیبانی
 توسعه و نگهداری توسط [tahatehran](https://github.com/tahatehran).
-با حمایت **Movti Group**.
 
 برای اطلاعات بیشتر در مورد ابزارهای آزادی اینترنت، از [پروژه امید](https://github.com/iranxray/hope) دیدن کنید.
 
