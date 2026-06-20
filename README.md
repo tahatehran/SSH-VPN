@@ -6,7 +6,7 @@
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-ffc107.svg)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/Rust-stable-orange.svg)](https://www.rust-lang.org/)
 
-A professional-grade Windows application that leverages the SSH protocol to provide a secure VPN/Tunneling experience. Available in two versions: **Modern (Tauri/Rust)** and **Classic (C#)**.
+A professional-grade Windows application that leverages the SSH protocol to provide a secure VPN/Tunneling experience. Built with **Tauri (Rust + React)** for a modern, fast, and secure experience.
 
 ---
 
@@ -23,14 +23,6 @@ A professional-grade Windows application that leverages the SSH protocol to prov
 - **🔄 Auto-Reconnect** - Exponential backoff reconnection
 - **💾 JSON Storage** - Modern configuration management
 
-### Classic Version (C#/.NET)
-- **🎨 Modern UI/UX** - Clean, flat design
-- **🌓 Adaptive Theme** - Dark and Light modes
-- **🌍 Bilingual Support** - English and Farsi
-- **📋 Server Management** - Multiple SSH server configurations
-- **📊 Real-time Ping** - Live latency monitoring
-- **📈 Bandwidth Monitor** - Download/upload tracking
-
 ---
 
 ## 📸 Screenshots
@@ -43,11 +35,9 @@ A professional-grade Windows application that leverages the SSH protocol to prov
 
 ## ⚙️ CI/CD Pipeline
 
-Unified GitHub Actions workflow (`.github/workflows/main.yml`):
-- **Tauri Build**: Rust + React → Windows executable (.exe) and installer (.msi)
-- **C# Build**: .NET Framework 4.8 → Portable executable
-- **Conditional Builds**: Only builds changed version
-- **Auto Release**: Combines both versions in release artifacts
+GitHub Actions workflows:
+- **main.yml**: Build and release Tauri app on push to master
+- **release.yml**: Auto-tag releases and generate changelogs
 
 ---
 
@@ -64,37 +54,27 @@ Unified GitHub Actions workflow (`.github/workflows/main.yml`):
 
 ## 🛡️ Security & Development
 
-- **Configuration**: SSH passwords stored in Windows Registry (C#) or JSON files (Tauri)
+- **Configuration**: SSH passwords stored in JSON files
 - **Guidelines**: See [AGENT.md](./AGENT.md) for coding standards
 
 ---
 
 ## 📥 Download & Installation
 
-### 🆕 Modern Version (Recommended)
 1. Go to [Releases](https://github.com/tahatehran/CSharp-SSH-VPN/releases)
-2. Download `SSH VPN Tauri.exe` or `.msi` installer
-3. Run and enjoy the modern UI!
-
-### 📦 Classic Version
-1. Go to [Releases](https://github.com/tahatehran/CSharp-SSH-VPN/releases)
-2. Download `ssh-vpn-csharp.zip`
-3. Extract and run `ssh-vpn.exe`
+2. Download `SSH VPN.exe` or `.msi` installer
+3. Run and enjoy!
 
 ---
 
 ## 🔧 Development
 
-### Modern App (ssh-vpn-tauri)
 ```bash
 cd ssh-vpn-tauri
 npm install
 npm run tauri dev    # Development
 npm run tauri build  # Production build
 ```
-
-### Classic App (ssh-vpn)
-Open `ssh-vpn.sln` in Visual Studio and build.
 
 ---
 
@@ -105,14 +85,14 @@ CSharp-SSH-VPN/
 ├── ssh-vpn-tauri/     # Modern Tauri (Rust + React) app
 ├── .github/           # CI/CD workflows
 ├── AGENT.md           # Developer guidelines
+├── CONTRIBUTING.md    # Contribution guidelines
 ├── README.md          # This file
-└── Readme.fa.md      # Persian documentation
+└── Readme.fa.md       # Persian documentation
 ```
 
 ---
 
 ### 🤝 Support & Sponsorship
 Developed and maintained by [tahatehran](https://github.com/tahatehran).
-Supported by **Movti Group**.
 
 For more information on internet freedom tools, check out the [Hope Project](https://github.com/iranxray/hope).
