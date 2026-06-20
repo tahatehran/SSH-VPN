@@ -1,5 +1,7 @@
 # 🛡️ SSH VPN
 
+[English](README.md) | [简体中文](README.zh.md) | [فارسی](Readme.fa.md)
+
 <div dir="rtl">
 
 [![Build Status](https://github.com/tahatehran/CSharp-SSH-VPN/actions/workflows/main.yml/badge.svg)](https://github.com/tahatehran/CSharp-SSH-VPN/actions/workflows/main.yml)
@@ -89,7 +91,8 @@ CSharp-SSH-VPN/
 ├── AGENT.md           # راهنمای توسعه‌دهندگان
 ├── CONTRIBUTING.md    # راهنمای مشارکت
 ├── README.md          # مستندات انگلیسی
-└── Readme.fa.md       # این فایل
+├── Readme.fa.md       # مستندات فارسی
+└── LICENSE            # لایسنس MIT
 ```
 
 ---
