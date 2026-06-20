@@ -2,8 +2,9 @@ use crate::error::{Result, SshVpnError};
 use crate::ssh_client::ServerInfo;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::Write;
 use std::path::PathBuf;
-use tracing::{info};
+use tracing::info;
 
 const APP_DIR: &str = "ssh-vpn-tauri";
 
@@ -51,15 +52,7 @@ impl Storage {
         info!("Storage initialized at {:?}", base_path);
         Ok(Self { base_path })
     }
-}
 
-impl Default for Storage {
-    fn default() -> Self {
-        Self::new().expect("Failed to initialize storage")
-    }
-}
-
-impl Storage {
     fn servers_path(&self) -> PathBuf {
         self.base_path.join("servers.json")
     }
@@ -136,7 +129,7 @@ impl Storage {
     pub fn load_settings(&self) -> Result<AppSettings> {
         let path = self.settings_path();
         if !path.exists() {
-            return Ok(AppSettings::new());
+            return Ok(AppSettings::default());
         }
 
         let content = fs::read_to_string(&path)

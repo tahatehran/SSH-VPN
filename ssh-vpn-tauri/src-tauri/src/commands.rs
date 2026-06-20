@@ -1,4 +1,3 @@
-use crate::error::SshVpnError;
 use crate::ssh_client::{ConnectionStatus, ServerInfo};
 use crate::storage::{AppSettings, Storage};
 use chrono::Utc;
@@ -122,10 +121,11 @@ pub fn update_server(
     state: State<'_, AppState>,
     server: ServerInfo,
 ) -> Result<(), String> {
+    let server_id = server.id.clone();
     state.storage.update_server(server)
         .map_err(|e| e.to_string())?;
     
-    info!("Updated server: {}", server.id);
+    info!("Updated server: {}", server_id);
     Ok(())
 }
 
