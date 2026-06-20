@@ -8,56 +8,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Build legacy C# application
-  build-csharp:
-    name: Build C# (Legacy)
-    runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: ssh-vpn
-    env:
-      Solution_Name: ../ssh-vpn.sln
-      Release_Path: bin/Release
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Check C# changes
-      id: check-csharp
-      run: |
-        $changed = git diff --name-only HEAD~1 HEAD | Where-Object { $_ -match '\.(cs|csproj)$' -or $_ -match '^ssh-vpn/' }
-        if ($changed) { echo "should_build=true" >> $env:GITHUB_OUTPUT } else { echo "should_build=false" >> $env:GITHUB_OUTPUT }
-
-    - name: Setup MSBuild.exe
-      if: steps.check-csharp.outputs.should_build == 'true'
-      uses: microsoft/setup-msbuild@v2
-
-    - name: Restore NuGet Packages
-      if: steps.check-csharp.outputs.should_build == 'true'
-      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release
-
-    - name: Build the solution
-      if: steps.check-csharp.outputs.should_build == 'true'
-      run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU"
-
-    - name: Create Zip Archive
-      if: steps.check-csharp.outputs.should_build == 'true'
-      shell: pwsh
-      run: Compress-Archive -Path ${{ env.Release_Path }}\* -DestinationPath ssh-vpn-csharp.zip
-
-    - name: Upload C# Artifact
-      if: steps.check-csharp.outputs.should_build == 'true'
-      uses: actions/upload-artifact@v4
-      with:
-        name: ssh-vpn-csharp
-        path: ssh-vpn/ssh-vpn-csharp.zip
-
   # Build Tauri application
-  build-tauri:
-    name: Build Tauri (Modern)
+  build:
+    name: Build Tauri
     runs-on: windows-latest
     defaults:
       run:
@@ -69,14 +22,7 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Check Tauri changes
-      id: check-tauri
-      run: |
-        $changed = git diff --name-only HEAD~1 HEAD | Where-Object { $_ -match '^ssh-vpn-tauri/' -or $_ -match 'package\.json' }
-        if ($changed) { echo "should_build=true" >> $env:GITHUB_OUTPUT } else { echo "should_build=false" >> $env:GITHUB_OUTPUT }
-
     - name: Setup Node.js
-      if: steps.check-tauri.outputs.should_build == 'true'
       uses: actions/setup-node@v4
       with:
         node-version: '20'
@@ -84,17 +30,17 @@ jobs:
         cache-dependency-path: ssh-vpn-tauri/package-lock.json
 
     - name: Install Rust stable
-      if: steps.check-tauri.outputs.should_build == 'true'
-      uses: dtolnay/rust-action@stable
+      uses: dtolnay/rust-toolchain@v1
+      
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2
       with:
-        targets: x86_64-pc-windows-msvc
+        workspaces: ssh-vpn-tauri/src-tauri
 
     - name: Install dependencies
-      if: steps.check-tauri.outputs.should_build == 'true'
       run: npm ci
 
     - name: Build Tauri app
-      if: steps.check-tauri.outputs.should_build == 'true'
       uses: tauri-apps/tauri-action@v0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -104,55 +50,6 @@ jobs:
         releaseBody: |
           See the assets for this release.
           Download the installer and run it.
-        releaseDraft: true
+        releaseDraft: false
         prerelease: false
         artifactsPath: ''
-        
-    - name: Upload Tauri Artifact
-      if: steps.check-tauri.outputs.should_build == 'true'
-      uses: actions/upload-artifact@v4
-      with:
-        name: ssh-vpn-tauri
-        path: |
-          ssh-vpn-tauri/target/release/bundle/msi/*.msi
-          ssh-vpn-tauri/target/release/*.exe
-
-  # Create combined release
-  release:
-    name: Create Release
-    needs: [build-csharp, build-tauri]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          artifacts/ssh-vpn-csharp/ssh-vpn-csharp.zip
-          artifacts/ssh-vpn-tauri/*.exe
-          artifacts/ssh-vpn-tauri/*.msi
-        tag_name: v1.0.${{ github.run_number }}
-        name: Release v1.0.${{ github.run_number }}
-        draft: false
-        prerelease: false
-        body: |
-          ## Downloads
-          
-          ### Legacy (C# .NET)
-          - ssh-vpn-csharp.zip - Portable executable
-          
-          ### Modern (Tauri Rust + React)
-          - SSH VPN Tauri.exe - Windows executable
-          - *.msi - Windows installer
-          
-          ### Note
-          The Tauri version is the recommended build for new users.
-          Legacy C# version maintained for backward compatibility.
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
