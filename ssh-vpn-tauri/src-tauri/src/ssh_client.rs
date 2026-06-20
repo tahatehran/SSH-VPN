@@ -449,10 +449,16 @@ impl SshClient {
         // Drop the lock before copying data
         drop(session_guard);
         
+        // Set timeouts to prevent infinite blocking
+        client_stream.set_read_timeout(Some(std::time::Duration::from_millis(100))).ok();
+        
         // Copy data between client and SSH channel
         let mut buf = [0u8; 8192];
+        let mut consecutive_timeouts = 0;
+        const MAX_IDLE_LOOPS: u32 = 300; // 30 seconds of no activity
+        
         loop {
-            // Non-blocking read from client
+            // Read from client and write to SSH channel
             match client_stream.read(&mut buf) {
                 Ok(0) => {
                     info!("Client closed connection");
@@ -460,9 +466,10 @@ impl SshClient {
                 }
                 Ok(n) => {
                     channel.write_all(&buf[..n])?;
+                    consecutive_timeouts = 0;
                 }
                 Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                    // No data available, try reading from channel
+                    // Will check channel next
                 }
                 Err(e) => {
                     warn!("Error reading from client: {}", e);
@@ -470,26 +477,38 @@ impl SshClient {
                 }
             }
             
-            // Non-blocking read from channel
+            // Read from SSH channel and write to client
             match channel.read(&mut buf) {
                 Ok(0) => {
-                    info!("SSH channel closed");
+                    info!("SSH channel closed by remote");
                     break;
                 }
                 Ok(n) => {
                     client_stream.write_all(&buf[..n])?;
+                    consecutive_timeouts = 0;
                 }
-                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                    // No data available
+                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock 
+                       || e.kind() == std::io::ErrorKind::TimedOut => {
+                    consecutive_timeouts += 1;
+                    if consecutive_timeouts >= MAX_IDLE_LOOPS {
+                        info!("Connection idle timeout, closing tunnel");
+                        break;
+                    }
                 }
                 Err(e) => {
                     warn!("Error reading from SSH channel: {}", e);
                     break;
                 }
             }
+            
+            // Small sleep to prevent CPU spinning when both sides have no data
+            if consecutive_timeouts > 0 {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
         }
         
-        channel.close()?;
+        let _ = channel.close();
+        let _ = channel.wait_closed();
         info!("SOCKS5 tunnel closed for {}:{}", dst_host, dst_port);
         Ok(())
     }
