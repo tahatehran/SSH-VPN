@@ -7,7 +7,7 @@ pub mod storage;
 pub use commands::{
     add_server, connect, delete_server, disconnect, get_server_location, get_servers,
     get_settings, get_status, save_settings, set_active_server, test_latency, update_server,
-    get_bandwidth, AppState,
+    get_bandwidth, get_app_version, AppState,
 };
 pub use bandwidth::{BandwidthStats, BandwidthMonitor};
 pub use error::{Result, SshVpnError};
