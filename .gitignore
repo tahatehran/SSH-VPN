@@ -59,3 +59,15 @@ build/
 dist/
 *.rar
 *.zip
+
+# Tauri build artifacts
+ssh-vpn-tauri/target/
+ssh-vpn-tauri/node_modules/
+ssh-vpn-tauri/src-tauri/target/
+
+# Tauri bundled installers (keep source)
+*.msi.bak
+*.exe.bak
+
+# Agent temp files
+.agents_tmp/
