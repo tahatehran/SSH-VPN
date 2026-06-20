@@ -1,0 +1,66 @@
+{
+  "app": {
+    "name": "SSH VPN",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "connecting": "Connecting...",
+    "connected": "Connected",
+    "notConnected": "Not Connected",
+    "reconnecting": "Reconnecting..."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "servers": "Servers",
+    "bandwidth": "Bandwidth",
+    "download": "Download",
+    "upload": "Upload",
+    "ping": "Ping",
+    "uptime": "Uptime",
+    "selectServer": "Select a server",
+    "noServerSelected": "No server selected"
+  },
+  "servers": {
+    "title": "Servers",
+    "addServer": "Add Server",
+    "editServer": "Edit Server",
+    "deleteServer": "Delete Server",
+    "name": "Name",
+    "host": "Host",
+    "port": "Port",
+    "username": "Username",
+    "password": "Password",
+    "privateKey": "Private Key",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirmDelete": "Are you sure you want to delete this server?",
+    "noServers": "No servers configured",
+    "addFirst": "Add your first server to get started"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "connection": "Connection",
+    "appearance": "Appearance",
+    "language": "Language",
+    "theme": "Theme",
+    "autoReconnect": "Auto Reconnect",
+    "killSwitch": "Kill Switch",
+    "dnsProtection": "DNS Leak Protection",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "status": {
+    "disconnected": "Disconnected",
+    "connecting": "Connecting",
+    "connected": "Connected",
+    "reconnecting": "Reconnecting",
+    "error": "Error"
+  },
+  "errors": {
+    "connectionFailed": "Connection failed",
+    "authFailed": "Authentication failed",
+    "networkError": "Network error",
+    "timeout": "Connection timeout"
+  }
+}

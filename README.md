@@ -39,7 +39,8 @@ This repository features a unified CI/CD pipeline (`.github/workflows/main.yml`)
 - [x] **Phase 2**: UI/UX overhaul with custom themes and animations.
 - [x] **Phase 3**: Multi-language support (EN/FA) and CI/CD pipeline setup.
 - [x] **Phase 4**: Server list management, real-time ping detection, and bandwidth monitoring.
-+- [x] **Phase 5**: Connection reliability hardening with timeout-based SSH connects, safe disconnect cleanup, UI-thread marshaling, bandwidth monitor lifecycle management, and stronger registry/proxy error handling.
+- [x] **Phase 5**: Connection reliability hardening with timeout-based SSH connects, safe disconnect cleanup, UI-thread marshaling, bandwidth monitor lifecycle management, and stronger registry/proxy error handling.
+- [ ] **Phase 6**: Tauri rebuild - Modern Rust + React frontend with enhanced features
 
 ## 🛡️ Security & Development
 
@@ -54,6 +55,21 @@ This repository features a unified CI/CD pipeline (`.github/workflows/main.yml`)
 3.  Run `ssh-vpn.exe` or complete the MSI installation.
 4.  Configure your SSH server details in the settings.
 5.  Use the server list to manage multiple connections.
+
+---
+
+## 🚀 New: Tauri Rebuild (ssh-vpn-tauri)
+
+A modern rebuild of the SSH VPN application using **Rust + React** with Tauri is available in the `ssh-vpn-tauri/` directory.
+
+### Key Improvements:
+- **Modern UI** - React + Tailwind CSS with smooth animations (Framer Motion)
+- **Better Performance** - Native Rust backend with Tokio async runtime
+- **Smaller Size** - ~10MB vs ~50MB for .NET Framework
+- **Cross-Platform Ready** - Designed for Windows, with potential for macOS/Linux
+- **Enhanced Features** - Multi-server failover, real-time charts, GeoIP location
+
+See [ssh-vpn-tauri/SPEC.md](./ssh-vpn-tauri/SPEC.md) for technical details.
 
 ---
 

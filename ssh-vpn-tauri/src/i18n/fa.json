@@ -1,0 +1,66 @@
+{
+  "app": {
+    "name": "SSH VPN",
+    "connect": "اتصال",
+    "disconnect": "قطع اتصال",
+    "connecting": "در حال اتصال...",
+    "connected": "متصل",
+    "notConnected": "قطع",
+    "reconnecting": "تلاش مجدد..."
+  },
+  "dashboard": {
+    "title": "داشبورد",
+    "servers": "سرورها",
+    "bandwidth": "پهنای باند",
+    "download": "دانلود",
+    "upload": "آپلود",
+    "ping": "پینگ",
+    "uptime": "زمان اتصال",
+    "selectServer": "یک سرور انتخاب کنید",
+    "noServerSelected": "سروری انتخاب نشده"
+  },
+  "servers": {
+    "title": "سرورها",
+    "addServer": "افزودن سرور",
+    "editServer": "ویرایش سرور",
+    "deleteServer": "حذف سرور",
+    "name": "نام",
+    "host": "آدرس",
+    "port": "پورت",
+    "username": "نام کاربری",
+    "password": "رمز عبور",
+    "privateKey": "کلید خصوصی",
+    "save": "ذخیره",
+    "cancel": "انصراف",
+    "confirmDelete": "آیا از حذف این سرور مطمئن هستید؟",
+    "noServers": "سروری تنظیم نشده",
+    "addFirst": "برای شروع اولین سرور خود را اضافه کنید"
+  },
+  "settings": {
+    "title": "تنظیمات",
+    "general": "عمومی",
+    "connection": "اتصال",
+    "appearance": "ظاهر",
+    "language": "زبان",
+    "theme": "تم",
+    "autoReconnect": "اتصال خودکار",
+    "killSwitch": "قطع اینترنت",
+    "dnsProtection": "محافظت DNS",
+    "light": "روشن",
+    "dark": "تاریک",
+    "system": "سیستم"
+  },
+  "status": {
+    "disconnected": "قطع",
+    "connecting": "در حال اتصال",
+    "connected": "متصل",
+    "reconnecting": "تلاش مجدد",
+    "error": "خطا"
+  },
+  "errors": {
+    "connectionFailed": "خطا در اتصال",
+    "authFailed": "خطا در احراز هویت",
+    "networkError": "خطای شبکه",
+    "timeout": "زمان اتصال به پایان رسید"
+  }
+}
