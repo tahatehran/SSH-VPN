@@ -31,7 +31,7 @@ A professional-grade Windows application that leverages the SSH protocol to prov
 
 | Modern (Tauri) | Classic (C#) |
 | :---: | :---: |
-| ![Tauri UI](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/12b72ac7-92f6-47be-bdd5-abcabfc9458c) | ![C# UI](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/21a80309-2760-46df-b94c-bab82cce845d) |
+| ![Tauri UI](https://github.com/tahatehran/CSharp-SSH-VPN/assets/67155909/12b72ac7-92f6-47be-bdd5-abcabfc9458c) | ![C# UI](https://private-user-images.githubusercontent.com/67155909/313697797-12b72ac7-92f6-47be-bdd5-abcabfc9458c.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3ODE5NDgyNzYsIm5iZiI6MTc4MTk0Nzk3NiwicGF0aCI6Ii82NzE1NTkwOS8zMTM2OTc3OTctMTJiNzJhYzctOTJmNi00N2JlLWJkZDUtYWJjYWJmYzk0NThjLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjA2MjAlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwNjIwVDA5MzI1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTc1NTIxYWQ3NjQzZTI2MDQ0NjVkZmU2YWY1ODkwZWQ4OWY3YmMwZWE1NDIyOGU0ZjQ2MWE4MTJmYzZkZDA0ZWEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnJlc3BvbnNlLWNvbnRlbnQtdHlwZT1pbWFnZSUyRnBuZyJ9.isFSrICjIfrXB1ujQz8wHGmoykqrcIYkw37IXDZRIVk) |
 
 ---
 
