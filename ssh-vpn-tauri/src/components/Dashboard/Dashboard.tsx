@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent } from '../UI/Card';
 import ConnectionCard from './ConnectionCard';
 import BandwidthChart from './BandwidthChart';
 import StatsPanel from './StatsPanel';
