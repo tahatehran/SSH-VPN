@@ -1,7 +1,5 @@
 use crate::routing::RoutingManager;
 use std::sync::Arc;
-use std::net::{IpAddr, Ipv4Addr};
-use tokio::sync::Mutex;
 use tracing::{info, error, warn};
 use crate::error::{Result, SshVpnError};
 use std::process::Command;
@@ -49,7 +47,7 @@ impl VpnManager {
         self.wintun = Some(Arc::clone(&adapter));
 
         // Start TUN to SOCKS worker
-        let adapter_worker = Arc::clone(&adapter);
+        let adapter_worker = adapter.clone();
         let stop_flag = Arc::clone(&self.should_stop);
 
         tokio::spawn(async move {

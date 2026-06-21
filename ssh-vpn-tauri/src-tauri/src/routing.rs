@@ -1,5 +1,5 @@
 use std::process::Command;
-use tracing::{info, error};
+use tracing::{info, warn};
 use crate::error::{Result, SshVpnError};
 
 pub struct RoutingManager {
