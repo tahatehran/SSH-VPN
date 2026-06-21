@@ -5,6 +5,7 @@ use crate::error::{Result, SshVpnError};
 pub struct RoutingManager {
     original_gateway: Option<String>,
     ssh_server_ip: Option<String>,
+    interface_name: Option<String>,
 }
 
 impl RoutingManager {
@@ -12,10 +13,11 @@ impl RoutingManager {
         Self {
             original_gateway: None,
             ssh_server_ip: None,
+            interface_name: None,
         }
     }
 
-    pub fn setup_routing(&mut self, ssh_host: &str, dns_servers: &[String]) -> Result<()> {
+    pub fn setup_routing(&mut self, ssh_host: &str, dns_servers: &[String], interface_name: &str) -> Result<()> {
         info!("Setting up routing for {}", ssh_host);
 
         // 1. Resolve SSH host to IP if it's a hostname
@@ -40,14 +42,14 @@ impl RoutingManager {
         if !dns_servers.is_empty() {
             // Set the first DNS server (clears existing)
             let _ = Command::new("netsh")
-                .args(["interface", "ip", "set", "dns", "SSHVPN", "static", &dns_servers[0]])
+                .args(["interface", "ip", "set", "dns", interface_name, "static", &dns_servers[0]])
                 .output();
 
             // Add subsequent DNS servers
             for (i, dns) in dns_servers.iter().enumerate().skip(1) {
                 let index = (i + 1).to_string();
                 let _ = Command::new("netsh")
-                    .args(["interface", "ip", "add", "dns", "SSHVPN", dns, &format!("index={}", index)])
+                    .args(["interface", "ip", "add", "dns", interface_name, dns, &format!("index={}", index)])
                     .output();
             }
         }
@@ -60,7 +62,9 @@ impl RoutingManager {
     pub fn restore_routing(&mut self) -> Result<()> {
         info!("Restoring original routing");
 
-        let _ = self.run_route_cmd(&["delete", "0.0.0.0", "mask", "0.0.0.0", "10.10.10.1"]);
+                if let Some(ref name) = self.interface_name {
+            let _ = self.run_route_cmd(&["delete", "0.0.0.0", "mask", "0.0.0.0", "10.10.10.1"]);
+        }
 
         if let Some(ssh_ip) = &self.ssh_server_ip {
             let _ = self.run_route_cmd(&["delete", ssh_ip]);

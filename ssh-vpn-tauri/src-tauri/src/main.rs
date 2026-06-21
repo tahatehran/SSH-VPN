@@ -1,3 +1,4 @@
+use tauri::Manager;
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use ssh_vpn_lib::{commands::AppState, storage::Storage, ssh_client::SshClient, bandwidth::BandwidthMonitor, vpn::VpnManager};
@@ -69,6 +70,18 @@ fn main() {
             ssh_vpn_lib::start_vpn,
             ssh_vpn_lib::stop_vpn,
         ])
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                let app_handle = window.app_handle().clone();
+                tauri::async_runtime::block_on(async move {
+                    let state = app_handle.state::<AppState>();
+                    let mut vpn = state.vpn_manager.lock().await;
+                    let _ = vpn.stop();
+                    // Also unset system proxy
+                    let _ = ssh_vpn_lib::unset_system_proxy();
+                });
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
