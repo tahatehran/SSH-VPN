@@ -1,11 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../../store/appStore';
-import { useTranslation } from 'react-i18next';
-import Card from '../UI/Card';
+import { Card } from '../UI/Card';
 
 export default function DebugLogs() {
   const { debugLogs, clearDebugLogs } = useAppStore();
-  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
 
@@ -31,11 +29,11 @@ export default function DebugLogs() {
 
   return (
     <Card className="h-full flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 p-4 border-b border-[var(--border)]">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-[var(--text-primary)]">System Logs</h3>
           <span className="px-2 py-0.5 rounded-full bg-[var(--bg-tertiary)] text-[10px] text-[var(--text-secondary)] font-bold uppercase tracking-tight">
-            Professional Engine v2
+            Engine v2
           </span>
         </div>
         <div className="flex gap-2">
@@ -43,13 +41,13 @@ export default function DebugLogs() {
             onClick={() => setAutoScroll(!autoScroll)}
             className={`text-[10px] px-2 py-1 rounded transition-colors ${autoScroll ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'}`}
           >
-            Auto-Scroll: {autoScroll ? 'ON' : 'OFF'}
+            {autoScroll ? 'Auto' : 'Manual'}
           </button>
           <button
             onClick={copyToClipboard}
             className="text-[10px] px-2 py-1 bg-[var(--bg-tertiary)] hover:bg-[var(--border)] rounded text-[var(--text-secondary)] transition-colors"
           >
-            Copy All
+            Copy
           </button>
           <button
             onClick={clearDebugLogs}
@@ -67,10 +65,10 @@ export default function DebugLogs() {
           if (!isAtBottom && autoScroll) setAutoScroll(false);
           if (isAtBottom && !autoScroll) setAutoScroll(true);
         }}
-        className="flex-1 overflow-y-auto bg-[#0a0a0a] rounded-xl p-4 font-mono text-[11px] space-y-1.5 scrollbar-thin border border-white/5 shadow-inner"
+        className="flex-1 overflow-y-auto bg-[#0a0a0a] p-4 font-mono text-[11px] space-y-1.5 scrollbar-thin shadow-inner"
       >
         {debugLogs.length === 0 ? (
-          <div className="text-gray-600 italic animate-pulse">Waiting for engine events...</div>
+          <div className="text-gray-600 italic">Waiting for events...</div>
         ) : (
           debugLogs.map((log, index) => (
             <div key={index} className="flex gap-2 leading-relaxed opacity-90 hover:opacity-100 transition-opacity">
