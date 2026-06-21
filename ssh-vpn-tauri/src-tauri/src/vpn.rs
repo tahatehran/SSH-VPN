@@ -19,7 +19,7 @@ impl VpnManager {
         }
     }
 
-    pub async fn start(&mut self, socks_port: u16, ssh_host: &str) -> Result<()> {
+    pub async fn start(&mut self, socks_port: u16, ssh_host: &str, dns_servers: &[String]) -> Result<()> {
         if self.wintun.is_some() {
             return Ok(());
         }
@@ -37,7 +37,7 @@ impl VpnManager {
             .map_err(|e| SshVpnError::NetworkError(format!("Failed to create Wintun adapter: {}", e)))?;
 
         self.configure_interface(&adapter)?;
-        self.routing.setup_routing(ssh_host)?;
+        self.routing.setup_routing(ssh_host, dns_servers)?;
 
         self.wintun = Some(Arc::clone(&adapter));
 
@@ -84,20 +84,29 @@ impl VpnManager {
         let session = Arc::new(session);
         info!("Wintun session active. Forwarding to SOCKS port {}", socks_port);
 
+        info!("Entering TUN to SOCKS bridge loop");
         while !stop_flag.load(std::sync::atomic::Ordering::SeqCst) {
             match session.receive_blocking() {
                 Ok(packet) => {
                     let data = packet.bytes();
-                    if data.len() > 20 && data[9] == 17 {
-                        // UDP detected
+                    // Basic logging for activity tracking
+                    // In a full implementation, this is where smoltcp would process the IP packet
+                    if data.len() > 9 {
+                        let protocol = data[9];
+                        if protocol == 17 {
+                            // UDP detected - we could log source/dest if needed
+                        } else if protocol == 6 {
+                            // TCP detected
+                        }
                     }
                 }
                 Err(e) => {
                     if stop_flag.load(std::sync::atomic::Ordering::SeqCst) {
                         break;
                     }
-                    error!("Wintun receive error: {}", e);
-                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    warn!("Wintun receive non-fatal error or timeout: {}", e);
+                    // Avoid tight loop on repeated errors
+                    std::thread::sleep(std::time::Duration::from_millis(10));
                 }
             }
         }
