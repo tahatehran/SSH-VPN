@@ -21,30 +21,22 @@ impl RoutingManager {
         info!("Setting up routing for {} using interface {}", ssh_host, interface_name);
         self.interface_name = Some(interface_name.to_string());
 
-        // 1. Resolve SSH host to IP if it's a hostname
         let ssh_ip = self.resolve_host(ssh_host)?;
         self.ssh_server_ip = Some(ssh_ip.clone());
 
-        // 2. Find default gateway
         let gateway = self.find_default_gateway()?;
         self.original_gateway = Some(gateway.clone());
 
         info!("Original gateway: {}, SSH IP: {}", gateway, ssh_ip);
 
-        // 3. Add route to SSH server via original gateway
         self.run_route_cmd(&["add", &ssh_ip, "mask", "255.255.255.255", &gateway, "metric", "1"])?;
-
-        // 4. Add global route via TUN adapter
         self.run_route_cmd(&["add", "0.0.0.0", "mask", "0.0.0.0", "10.10.10.1", "metric", "5"])?;
 
-        // 5. Setup DNS
         if !dns_servers.is_empty() {
-            // Set the first DNS server (clears existing)
             let _ = Command::new("netsh")
                 .args(["interface", "ip", "set", "dns", interface_name, "static", &dns_servers[0]])
                 .output();
 
-            // Add subsequent DNS servers
             for (i, dns) in dns_servers.iter().enumerate().skip(1) {
                 let index = (i + 1).to_string();
                 let _ = Command::new("netsh")
@@ -60,7 +52,7 @@ impl RoutingManager {
     pub fn restore_routing(&mut self) -> Result<()> {
         info!("Restoring original routing");
 
-        if let Some(ref _name) = self.interface_name {
+        if self.interface_name.is_some() {
             let _ = self.run_route_cmd(&["delete", "0.0.0.0", "mask", "0.0.0.0", "10.10.10.1"]);
         }
 
@@ -70,6 +62,7 @@ impl RoutingManager {
 
         self.ssh_server_ip = None;
         self.original_gateway = None;
+        self.interface_name = None;
 
         info!("Routing restored");
         Ok(())

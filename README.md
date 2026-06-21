@@ -53,6 +53,7 @@ GitHub Actions workflows:
 - [x] **Phase 4**: Server list management, real-time ping detection, and bandwidth monitoring.
 - [x] **Phase 5**: Connection reliability hardening with timeout-based SSH connects.
 - [x] **Phase 6**: Tauri rebuild - Modern Rust + React frontend ✅
+- [x] **Phase 7**: Add Global VPN Mode and DNS Security ✅
 
 ---
 
