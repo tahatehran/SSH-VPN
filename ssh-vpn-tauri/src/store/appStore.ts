@@ -55,6 +55,7 @@ const defaultSettings: AppSettings = {
   max_ping_ms: 200,
   socks_port: 9000,
   system_proxy: true,
+  global_vpn: true,
 };
 
 const defaultConnectionStatus: ConnectionStatus = {
@@ -122,6 +123,14 @@ export const useAppStore = create<AppState>((set, get) => ({
         });
       }
       
+
+      // Handle Global VPN (TUN)
+      if (currentSettings.global_vpn) {
+        await invoke('start_vpn').catch(err => {
+          console.warn('Failed to start Global VPN:', err);
+        });
+      }
+
       set({ connectionStatus: status, isConnecting: false });
       // Start polling after successful connection
       get().startPolling();
@@ -138,6 +147,12 @@ export const useAppStore = create<AppState>((set, get) => ({
         console.warn('Failed to unset system proxy:', err);
       });
       
+
+      // Stop Global VPN
+      await invoke('stop_vpn').catch(err => {
+        console.warn('Failed to stop Global VPN:', err);
+      });
+
       await invoke('disconnect');
       get().stopPolling();
       set({ connectionStatus: defaultConnectionStatus, bandwidth: [] });

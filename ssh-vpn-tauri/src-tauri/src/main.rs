@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use ssh_vpn_lib::{commands::AppState, storage::Storage, ssh_client::SshClient, bandwidth::BandwidthMonitor};
+use ssh_vpn_lib::{commands::AppState, storage::Storage, ssh_client::SshClient, bandwidth::BandwidthMonitor, vpn::VpnManager};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{error, info, Level};
@@ -35,11 +35,13 @@ fn main() {
     // Initialize SSH client and bandwidth monitor
     let ssh_client = Arc::new(Mutex::new(SshClient::new()));
     let bandwidth = Arc::new(BandwidthMonitor::new());
+    let vpn_manager = Arc::new(Mutex::new(VpnManager::new()));
 
     let app_state = AppState { 
         storage, 
         ssh_client,
         bandwidth,
+        vpn_manager,
     };
 
     tauri::Builder::default()
@@ -64,6 +66,8 @@ fn main() {
             ssh_vpn_lib::get_public_ip,
             ssh_vpn_lib::set_system_proxy,
             ssh_vpn_lib::unset_system_proxy,
+            ssh_vpn_lib::start_vpn,
+            ssh_vpn_lib::stop_vpn,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

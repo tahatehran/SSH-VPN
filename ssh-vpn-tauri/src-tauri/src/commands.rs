@@ -1,3 +1,4 @@
+use crate::vpn::VpnManager;
 use crate::ssh_client::{ConnectionStatus, ServerInfo};
 use crate::storage::{AppSettings, Storage};
 use chrono::Utc;
@@ -15,6 +16,7 @@ pub struct AppState {
     pub storage: Storage,
     pub ssh_client: Arc<Mutex<SshClient>>,
     pub bandwidth: Arc<BandwidthMonitor>,
+    pub vpn_manager: Arc<Mutex<VpnManager>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -329,4 +331,24 @@ pub fn unset_system_proxy() -> Result<(), String> {
     }
     
     Ok(())
+}
+
+/// Start Global VPN
+#[tauri::command]
+pub async fn start_vpn(state: State<'_, AppState>) -> Result<(), String> {
+    let settings = state.storage.load_settings().map_err(|e| e.to_string())?;
+    let mut vpn = state.vpn_manager.lock().await;
+    // Get the active server to get its host
+    let servers = state.storage.load_servers().map_err(|e| e.to_string())?;
+    let active_server = servers.iter().find(|s| s.is_active)
+        .ok_or_else(|| "No active server selected".to_string())?;
+
+    vpn.start(settings.socks_port, &active_server.host).await.map_err(|e| e.to_string())
+}
+
+/// Stop Global VPN
+#[tauri::command]
+pub async fn stop_vpn(state: State<'_, AppState>) -> Result<(), String> {
+    let mut vpn = state.vpn_manager.lock().await;
+    vpn.stop().map_err(|e| e.to_string())
 }
