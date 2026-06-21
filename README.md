@@ -13,8 +13,12 @@ A professional-grade Windows application that leverages the SSH protocol to prov
 ---
 
 ## 🚀 Key Features
+- **🌍 Global VPN Mode**: Wintun-powered system-wide tunneling
+- **🔒 DNS Leak Protection**: Automated DNS security configuration
 
 ### Modern Version (Tauri/Rust) ✨
+- **🌍 Global VPN Mode** - Wintun virtual adapter for system-wide tunneling
+- **🔒 DNS Leak Protection** - Integrated DNS security and custom DNS support
 - **🎨 Modern UI** - React + Tailwind CSS with Framer Motion animations
 - **⚡ High Performance** - Native Rust backend with Tokio async runtime
 - **📦 Small Size** - ~10MB vs ~50MB for .NET Framework
