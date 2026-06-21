@@ -1,0 +1,110 @@
+use std::process::Command;
+use tracing::{info, error};
+use crate::error::{Result, SshVpnError};
+
+pub struct RoutingManager {
+    original_gateway: Option<String>,
+    ssh_server_ip: Option<String>,
+}
+
+impl RoutingManager {
+    pub fn new() -> Self {
+        Self {
+            original_gateway: None,
+            ssh_server_ip: None,
+        }
+    }
+
+    pub fn setup_routing(&mut self, ssh_host: &str) -> Result<()> {
+        info!("Setting up routing for {}", ssh_host);
+
+        // 1. Resolve SSH host to IP if it's a hostname
+        let ssh_ip = self.resolve_host(ssh_host)?;
+        self.ssh_server_ip = Some(ssh_ip.clone());
+
+        // 2. Find default gateway
+        let gateway = self.find_default_gateway()?;
+        self.original_gateway = Some(gateway.clone());
+
+        info!("Original gateway: {}, SSH IP: {}", gateway, ssh_ip);
+
+        // 3. Add route to SSH server via original gateway
+        // route add <SSH_IP> mask 255.255.255.255 <GATEWAY> metric 1
+        self.run_route_cmd(&["add", &ssh_ip, "mask", "255.255.255.255", &gateway, "metric", "1"])?;
+
+        // 4. Add global route via TUN adapter
+        // route add 0.0.0.0 mask 0.0.0.0 10.10.10.1 metric 5
+        self.run_route_cmd(&["add", "0.0.0.0", "mask", "0.0.0.0", "10.10.10.1", "metric", "5"])?;
+
+
+        // 5. Setup DNS (optional but recommended)
+        // For now, we can try to set the DNS of the TUN adapter to 8.8.8.8
+        // netsh interface ip set dns name="<TUN_NAME>" static 8.8.8.8
+        let _ = Command::new("netsh")
+            .args(["interface", "ip", "set", "dns", "SSHVPN", "static", "8.8.8.8"])
+            .output();
+
+        info!("Routing established");
+        Ok(())
+    }
+
+    pub fn restore_routing(&mut self) -> Result<()> {
+        info!("Restoring original routing");
+
+        // Remove TUN route
+        let _ = self.run_route_cmd(&["delete", "0.0.0.0", "mask", "0.0.0.0", "10.10.10.1"]);
+
+        // Remove SSH server route
+        if let Some(ssh_ip) = &self.ssh_server_ip {
+            let _ = self.run_route_cmd(&["delete", ssh_ip]);
+        }
+
+        self.ssh_server_ip = None;
+        self.original_gateway = None;
+
+        info!("Routing restored");
+        Ok(())
+    }
+
+    fn resolve_host(&self, host: &str) -> Result<String> {
+        use std::net::ToSocketAddrs;
+        let addr = format!("{}:22", host);
+        if let Ok(mut addrs) = addr.to_socket_addrs() {
+            if let Some(addr) = addrs.next() {
+                return Ok(addr.ip().to_string());
+            }
+        }
+        Err(SshVpnError::NetworkError(format!("Failed to resolve host: {}", host)))
+    }
+
+    fn find_default_gateway(&self) -> Result<String> {
+        // Simple way to find gateway on Windows using netstat or powershell
+        let output = Command::new("powershell")
+            .args(["-Command", "Get-NetRoute -DestinationPrefix '0.0.0.0/0' | Sort-Object RouteMetric | Select-Object -First 1 -ExpandProperty NextHop"])
+            .output()
+            .map_err(|e| SshVpnError::NetworkError(format!("Failed to run powershell: {}", e)))?;
+
+        if output.status.success() {
+            let gateway = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !gateway.is_empty() {
+                return Ok(gateway);
+            }
+        }
+
+        // Fallback or error
+        Err(SshVpnError::NetworkError("Could not find default gateway".to_string()))
+    }
+
+    fn run_route_cmd(&self, args: &[&str]) -> Result<()> {
+        let output = Command::new("route")
+            .args(args)
+            .output()
+            .map_err(|e| SshVpnError::NetworkError(format!("Failed to run route command: {}", e)))?;
+
+        if !output.status.success() {
+            let err = String::from_utf8_lossy(&output.stderr);
+            warn!("Route command warning ({}): {}", args.join(" "), err);
+        }
+        Ok(())
+    }
+}

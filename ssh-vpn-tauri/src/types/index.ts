@@ -50,6 +50,7 @@ export interface AppSettings {
   max_ping_ms: number;
   socks_port: number;
   system_proxy: boolean;
+  global_vpn: boolean;
 }
 
 export interface BandwidthStats {

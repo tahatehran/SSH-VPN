@@ -48,7 +48,10 @@
     "dnsProtection": "محافظت DNS",
     "light": "روشن",
     "dark": "تاریک",
-    "system": "سیستم"
+    "system": "سیستم",
+    "globalVpn": "حالت VPN سراسری",
+    "globalVpnDesc": "استفاده از آداپتور مجازی Wintun برای تونل‌زنی کل سیستم",
+    "systemProxyDesc": "انتقال تمام ترافیک از طریق VPN (پروکسی سیستم)"
   },
   "status": {
     "disconnected": "قطع",

@@ -186,8 +186,15 @@ export default function Settings() {
           <Toggle
             checked={settings.system_proxy}
             onChange={(value) => handleToggle('system_proxy', value)}
-            label="System Proxy (Route all traffic through VPN)"
+            label={t('settings.systemProxyDesc')}
           />
+
+          <Toggle
+            checked={settings.global_vpn}
+            onChange={(value) => handleToggle('global_vpn', value)}
+            label={t('settings.globalVpn')}
+          />
+
         </CardContent>
       </Card>
 

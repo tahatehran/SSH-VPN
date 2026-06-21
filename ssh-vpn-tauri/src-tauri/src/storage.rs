@@ -20,6 +20,7 @@ pub struct AppSettings {
     pub max_ping_ms: u32,
     pub socks_port: u16,  // Local SOCKS5 proxy port
     pub system_proxy: bool,  // Auto-set Windows system proxy
+    pub global_vpn: bool,    // Use Wintun TUN interface
 }
 
 impl Default for AppSettings {
@@ -34,7 +35,8 @@ impl Default for AppSettings {
             check_interval_sec: 30,
             max_ping_ms: 200,
             socks_port: 9000,
-            system_proxy: true,  // Enabled by default
+            system_proxy: true,
+            global_vpn: true,
         }
     }
 }

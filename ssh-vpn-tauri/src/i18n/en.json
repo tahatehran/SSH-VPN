@@ -48,7 +48,10 @@
     "dnsProtection": "DNS Leak Protection",
     "light": "Light",
     "dark": "Dark",
-    "system": "System"
+    "system": "System",
+    "globalVpn": "Global VPN Mode",
+    "globalVpnDesc": "Uses Wintun virtual adapter for system-wide tunneling",
+    "systemProxyDesc": "Route all traffic through VPN (System Proxy)"
   },
   "status": {
     "disconnected": "Disconnected",
