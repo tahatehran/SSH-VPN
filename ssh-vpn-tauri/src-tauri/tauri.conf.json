@@ -38,7 +38,7 @@
     ],
     "windows": {
       "nsis": {
-        "privilegeLevel": "admin"
+        "installMode": "perMachine"
       }
     }
   },
