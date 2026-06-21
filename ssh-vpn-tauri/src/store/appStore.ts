@@ -2,6 +2,13 @@ import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import type { ServerInfo, ServerConfig, ConnectionStatus, AppSettings, BandwidthStats } from '../types';
 
+export interface DebugLog {
+  timestamp: string;
+  level: 'Info' | 'Warning' | 'Error' | 'Debug';
+  module: string;
+  message: string;
+}
+
 interface AppState {
   // Connection
   connectionStatus: ConnectionStatus;
@@ -17,10 +24,13 @@ interface AppState {
   // Bandwidth
   bandwidth: BandwidthStats[];
   
+  // Debug Logs
+  debugLogs: DebugLog[];
+
   // UI State
   theme: 'light' | 'dark' | 'system';
   language: 'en' | 'fa';
-  activeView: 'dashboard' | 'servers' | 'settings';
+  activeView: 'dashboard' | 'servers' | 'settings' | 'logs';
   
   // Polling
   startPolling: () => void;
@@ -40,8 +50,10 @@ interface AppState {
   testLatency: (host: string, port: number) => Promise<number>;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setLanguage: (language: 'en' | 'fa') => void;
-  setActiveView: (view: 'dashboard' | 'servers' | 'settings') => void;
+  setActiveView: (view: 'dashboard' | 'servers' | 'settings' | 'logs') => void;
   addBandwidthStats: (stats: BandwidthStats) => void;
+  fetchDebugLogs: () => Promise<void>;
+  clearDebugLogs: () => Promise<void>;
 }
 
 const defaultSettings: AppSettings = {
@@ -65,40 +77,36 @@ const defaultConnectionStatus: ConnectionStatus = {
   bytes_received: 0,
 };
 
-// Polling interval reference
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
 export const useAppStore = create<AppState>((set, get) => ({
-  // Initial state
   connectionStatus: defaultConnectionStatus,
   isConnecting: false,
   servers: [],
   activeServerId: null,
   settings: defaultSettings,
   bandwidth: [],
+  debugLogs: [],
   theme: 'system',
   language: 'en',
   activeView: 'dashboard',
 
-  // Polling
   startPolling: () => {
     if (pollingInterval) return;
-    
     pollingInterval = setInterval(async () => {
       try {
-        // Fetch connection status
         const status = await invoke<ConnectionStatus>('get_status');
         set({ connectionStatus: status });
         
-        // If connected, fetch bandwidth stats
         if (status.state === 'connected') {
           const stats = await invoke<BandwidthStats>('get_bandwidth');
           get().addBandwidthStats(stats);
         }
-      } catch (error) {
-        // Silently handle polling errors
-      }
-    }, 1000); // Poll every second
+
+        // Also poll debug logs
+        await get().fetchDebugLogs();
+      } catch (error) {}
+    }, 1000);
   },
 
   stopPolling: () => {
@@ -108,31 +116,22 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  // Actions
   connect: async (config: ServerConfig) => {
     set({ isConnecting: true });
     try {
       const status = await invoke<ConnectionStatus>('connect', { config });
-      
-      // Set system proxy only if enabled in settings
       const currentSettings = get().settings;
+
       if (currentSettings.system_proxy) {
         const socksPort = status.local_port || 9000;
-        await invoke('set_system_proxy', { port: socksPort }).catch(err => {
-          console.warn('Failed to set system proxy:', err);
-        });
+        await invoke('set_system_proxy', { port: socksPort }).catch(err => console.warn(err));
       }
-      
 
-      // Handle Global VPN (TUN)
       if (currentSettings.global_vpn) {
-        await invoke('start_vpn').catch(err => {
-          console.warn('Failed to start Global VPN:', err);
-        });
+        await invoke('start_vpn').catch(err => console.warn(err));
       }
 
       set({ connectionStatus: status, isConnecting: false });
-      // Start polling after successful connection
       get().startPolling();
     } catch (error) {
       set({ isConnecting: false });
@@ -142,17 +141,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   disconnect: async () => {
     try {
-      // Unset system proxy first
-      await invoke('unset_system_proxy').catch(err => {
-        console.warn('Failed to unset system proxy:', err);
-      });
-      
-
-      // Stop Global VPN
-      await invoke('stop_vpn').catch(err => {
-        console.warn('Failed to stop Global VPN:', err);
-      });
-
+      await invoke('stop_vpn').catch(err => console.warn(err));
+      await invoke('unset_system_proxy').catch(err => console.warn(err));
       await invoke('disconnect');
       get().stopPolling();
       set({ connectionStatus: defaultConnectionStatus, bandwidth: [] });
@@ -162,133 +152,87 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   fetchStatus: async () => {
-    try {
-      const status = await invoke<ConnectionStatus>('get_status');
-      set({ connectionStatus: status });
-    } catch (error) {
-      console.error('Failed to fetch status:', error);
-    }
+    const status = await invoke<ConnectionStatus>('get_status');
+    set({ connectionStatus: status });
   },
 
   fetchServers: async () => {
-    try {
-      const servers = await invoke<ServerInfo[]>('get_servers');
-      const activeServer = servers.find(s => s.is_active);
-      set({ 
-        servers, 
-        activeServerId: activeServer?.id || null 
-      });
-    } catch (error) {
-      console.error('Failed to fetch servers:', error);
-    }
+    const servers = await invoke<ServerInfo[]>('get_servers');
+    const activeServer = servers.find(s => s.is_active);
+    set({ servers, activeServerId: activeServer?.id || null });
   },
 
   addServer: async (server) => {
-    try {
-      const newServer: ServerInfo = {
-        ...server,
-        id: '', // Will be generated by backend
-        created_at: new Date().toISOString(),
-      } as ServerInfo;
-      await invoke('add_server', { server: newServer });
-      await get().fetchServers();
-    } catch (error) {
-      throw error;
-    }
+    await invoke('add_server', { server });
+    await get().fetchServers();
   },
 
   updateServer: async (server) => {
-    try {
-      await invoke('update_server', { server });
-      await get().fetchServers();
-    } catch (error) {
-      throw error;
-    }
+    await invoke('update_server', { server });
+    await get().fetchServers();
   },
 
   deleteServer: async (id) => {
-    try {
-      await invoke('delete_server', { id });
-      await get().fetchServers();
-    } catch (error) {
-      throw error;
-    }
+    await invoke('delete_server', { id });
+    await get().fetchServers();
   },
 
   setActiveServer: async (id) => {
-    try {
-      await invoke('set_active_server', { id });
-      set({ activeServerId: id });
-      await get().fetchServers();
-    } catch (error) {
-      throw error;
-    }
+    await invoke('set_active_server', { id });
+    set({ activeServerId: id });
+    await get().fetchServers();
   },
 
   fetchSettings: async () => {
-    try {
-      const settings = await invoke<AppSettings>('get_settings');
-      set({ 
-        settings,
-        theme: settings.theme as 'light' | 'dark' | 'system',
-        language: settings.language as 'en' | 'fa',
-      });
-    } catch (error) {
-      console.error('Failed to fetch settings:', error);
-    }
+    const settings = await invoke<AppSettings>('get_settings');
+    set({
+      settings,
+      theme: settings.theme as any,
+      language: settings.language as any,
+    });
   },
 
   saveSettings: async (settings) => {
-    try {
-      await invoke('save_settings', { settings });
-      set({ 
-        settings,
-        theme: settings.theme as 'light' | 'dark' | 'system',
-        language: settings.language as 'en' | 'fa',
-      });
-    } catch (error) {
-      throw error;
-    }
+    await invoke('save_settings', { settings });
+    set({
+      settings,
+      theme: settings.theme as any,
+      language: settings.language as any,
+    });
   },
 
   testLatency: async (host, port) => {
+    return await invoke<number>('test_latency', { host, port });
+  },
+
+  fetchDebugLogs: async () => {
     try {
-      return await invoke<number>('test_latency', { host, port });
-    } catch (error) {
-      throw error;
-    }
+      const logs = await invoke<DebugLog[]>('get_debug_logs');
+      set({ debugLogs: logs });
+    } catch (error) {}
+  },
+
+  clearDebugLogs: async () => {
+    try {
+      await invoke('clear_debug_logs');
+      set({ debugLogs: [] });
+    } catch (error) {}
   },
 
   setTheme: (theme) => {
     set({ theme });
-    // Apply theme to document
     const root = document.documentElement;
-    if (theme === 'dark') {
-      root.setAttribute('data-theme', 'dark');
-    } else if (theme === 'light') {
-      root.removeAttribute('data-theme');
-    } else {
-      // System preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        root.setAttribute('data-theme', 'dark');
-      } else {
-        root.removeAttribute('data-theme');
-      }
-    }
+    if (theme === 'dark') root.setAttribute('data-theme', 'dark');
+    else if (theme === 'light') root.removeAttribute('data-theme');
+    else if (window.matchMedia('(prefers-color-scheme: dark)').matches) root.setAttribute('data-theme', 'dark');
+    else root.removeAttribute('data-theme');
   },
 
-  setLanguage: (language) => {
-    set({ language });
-  },
-
-  setActiveView: (view) => {
-    set({ activeView: view });
-  },
-
+  setLanguage: (language) => set({ language }),
+  setActiveView: (view) => set({ activeView: view }),
   addBandwidthStats: (stats) => {
     set((state) => ({
-      bandwidth: [...state.bandwidth.slice(-59), stats], // Keep last 60 data points
+      bandwidth: [...state.bandwidth.slice(-59), stats],
     }));
   },
 }));

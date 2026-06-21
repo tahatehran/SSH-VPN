@@ -1,20 +1,16 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use tauri::Manager;
-use ssh_vpn_lib::{commands::AppState, storage::Storage, ssh_client::SshClient, bandwidth::BandwidthMonitor, vpn::VpnManager};
+use ssh_vpn_lib::{commands::AppState, storage::Storage, ssh_client::SshClient, bandwidth::BandwidthMonitor, vpn::VpnManager, debug::DebugManager};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{error, info, Level};
 use tracing_subscriber::FmtSubscriber;
 
 fn main() {
-    // Initialize logging
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
         .with_target(false)
-        .with_thread_ids(false)
-        .with_file(true)
-        .with_line_number(true)
         .finish();
 
     if let Err(e) = tracing::subscriber::set_global_default(subscriber) {
@@ -23,26 +19,25 @@ fn main() {
 
     info!("Starting SSH VPN Tauri application");
 
-    // Initialize storage
     let storage = match Storage::new() {
         Ok(s) => s,
         Err(e) => {
             error!("Failed to initialize storage: {}", e);
-            eprintln!("Failed to initialize storage: {}", e);
             std::process::exit(1);
         }
     };
 
-    // Initialize SSH client and bandwidth monitor
     let ssh_client = Arc::new(Mutex::new(SshClient::new()));
     let bandwidth = Arc::new(BandwidthMonitor::new());
     let vpn_manager = Arc::new(Mutex::new(VpnManager::new()));
+    let debug_manager = Arc::new(DebugManager::new());
 
     let app_state = AppState { 
         storage, 
         ssh_client,
         bandwidth,
         vpn_manager,
+        debug_manager,
     };
 
     tauri::Builder::default()
@@ -69,6 +64,8 @@ fn main() {
             ssh_vpn_lib::unset_system_proxy,
             ssh_vpn_lib::start_vpn,
             ssh_vpn_lib::stop_vpn,
+            ssh_vpn_lib::get_debug_logs,
+            ssh_vpn_lib::clear_debug_logs,
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
@@ -77,7 +74,6 @@ fn main() {
                     let state = app_handle.state::<AppState>();
                     let mut vpn = state.vpn_manager.lock().await;
                     let _ = vpn.stop();
-                    // Also unset system proxy
                     let _ = ssh_vpn_lib::unset_system_proxy();
                 });
             }

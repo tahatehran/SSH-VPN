@@ -28,9 +28,9 @@ pub enum SshVpnError {
     
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
-    
+
     #[error("SSH error: {0}")]
-    SshError(#[from] ssh2::Error),
+    SshError(String),
 }
 
 pub type Result<T> = std::result::Result<T, SshVpnError>;

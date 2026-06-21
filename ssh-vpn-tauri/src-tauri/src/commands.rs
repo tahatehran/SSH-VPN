@@ -1,4 +1,3 @@
-use crate::vpn::VpnManager;
 use crate::ssh_client::{ConnectionStatus, ServerInfo};
 use crate::storage::{AppSettings, Storage};
 use chrono::Utc;
@@ -11,12 +10,15 @@ use uuid::Uuid;
 
 use crate::ssh_client::SshClient;
 use crate::bandwidth::BandwidthMonitor;
+use crate::vpn::VpnManager;
+use crate::debug::{DebugManager, DebugLog};
 
 pub struct AppState {
     pub storage: Storage,
     pub ssh_client: Arc<Mutex<SshClient>>,
     pub bandwidth: Arc<BandwidthMonitor>,
     pub vpn_manager: Arc<Mutex<VpnManager>>,
+    pub debug_manager: Arc<DebugManager>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -61,12 +63,12 @@ pub async fn connect(
     state.storage.log_connection("CONNECTING", &server.name)
         .map_err(|e| e.to_string())?;
     
-    // Load settings to get socks_port
     let settings = state.storage.load_settings()
         .map_err(|e| e.to_string())?;
     
-    // Use the SSH client from AppState
     let mut client = state.ssh_client.lock().await;
+    client.set_debug_manager(Arc::clone(&state.debug_manager));
+    client.set_bandwidth(Arc::clone(&state.bandwidth));
     client.set_local_port(settings.socks_port);
     client.connect(&server).await.map_err(|e| e.to_string())
 }
@@ -241,7 +243,6 @@ pub async fn get_public_ip() -> Result<String, String> {
         .build()
         .map_err(|e| e.to_string())?;
     
-    // Try multiple IP detection services
     let urls = [
         "https://api.ipify.org?format=json",
         "https://ifconfig.me/json",
@@ -251,7 +252,6 @@ pub async fn get_public_ip() -> Result<String, String> {
     for url in &urls {
         if let Ok(response) = client.get(*url).send().await {
             if let Ok(text) = response.text().await {
-                // Try to parse as JSON - check both "ip" and "ip_addr" keys
                 if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
                     if let Some(ip) = json.get("ip")
                         .or_else(|| json.get("ip_addr"))
@@ -260,7 +260,6 @@ pub async fn get_public_ip() -> Result<String, String> {
                         return Ok(ip.to_string());
                     }
                 }
-                // Try plain text format - use proper IPAddr parser for IPv4/IPv6
                 let trimmed = text.trim();
                 if trimmed.parse::<std::net::IpAddr>().is_ok() {
                     return Ok(trimmed.to_string());
@@ -278,7 +277,6 @@ pub async fn get_public_ip() -> Result<String, String> {
 pub fn set_system_proxy(port: u16) -> Result<(), String> {
     use std::process::Command;
     
-    // Try using netsh first (affects more apps)
     let proxy_addr = format!("socks=127.0.0.1:{}", port);
     let output = Command::new("netsh")
         .args(["winhttp", "set", "proxy", &proxy_addr])
@@ -291,7 +289,6 @@ pub fn set_system_proxy(port: u16) -> Result<(), String> {
         }
     }
     
-    // Fallback to registry
     use winreg::enums::*;
     use winreg::RegKey;
 
@@ -314,12 +311,10 @@ pub fn set_system_proxy(port: u16) -> Result<(), String> {
 pub fn unset_system_proxy() -> Result<(), String> {
     use std::process::Command;
     
-    // Try netsh first
     let _ = Command::new("netsh")
         .args(["winhttp", "reset", "proxy"])
         .output();
     
-    // Also clear registry
     use winreg::enums::*;
     use winreg::RegKey;
 
@@ -338,7 +333,8 @@ pub fn unset_system_proxy() -> Result<(), String> {
 pub async fn start_vpn(state: State<'_, AppState>) -> Result<(), String> {
     let settings = state.storage.load_settings().map_err(|e| e.to_string())?;
     let mut vpn = state.vpn_manager.lock().await;
-    // Get the active server to get its host
+    vpn.set_debug_manager(Arc::clone(&state.debug_manager));
+
     let servers = state.storage.load_servers().map_err(|e| e.to_string())?;
     let active_server = servers.iter().find(|s| s.is_active)
         .ok_or_else(|| "No active server selected".to_string())?;
@@ -351,4 +347,17 @@ pub async fn start_vpn(state: State<'_, AppState>) -> Result<(), String> {
 pub async fn stop_vpn(state: State<'_, AppState>) -> Result<(), String> {
     let mut vpn = state.vpn_manager.lock().await;
     vpn.stop().map_err(|e| e.to_string())
+}
+
+/// Get debug logs
+#[tauri::command]
+pub async fn get_debug_logs(state: State<'_, AppState>) -> Result<Vec<DebugLog>, String> {
+    Ok(state.debug_manager.get_logs().await)
+}
+
+/// Clear debug logs
+#[tauri::command]
+pub async fn clear_debug_logs(state: State<'_, AppState>) -> Result<(), String> {
+    state.debug_manager.clear_logs().await;
+    Ok(())
 }
