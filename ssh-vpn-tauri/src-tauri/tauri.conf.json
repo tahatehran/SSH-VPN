@@ -40,7 +40,10 @@
       "nsis": {
         "installMode": "perMachine"
       }
-    }
+    },
+    "resources": [
+      "wintun.dll"
+    ]
   },
   "plugins": {
     "updater": {

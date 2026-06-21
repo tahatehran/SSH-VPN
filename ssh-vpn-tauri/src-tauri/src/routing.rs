@@ -15,7 +15,7 @@ impl RoutingManager {
         }
     }
 
-    pub fn setup_routing(&mut self, ssh_host: &str) -> Result<()> {
+    pub fn setup_routing(&mut self, ssh_host: &str, dns_servers: &[String]) -> Result<()> {
         info!("Setting up routing for {}", ssh_host);
 
         // 1. Resolve SSH host to IP if it's a hostname
@@ -35,9 +35,23 @@ impl RoutingManager {
         self.run_route_cmd(&["add", "0.0.0.0", "mask", "0.0.0.0", "10.10.10.1", "metric", "5"])?;
 
         // 5. Setup DNS
-        let _ = Command::new("netsh")
-            .args(["interface", "ip", "set", "dns", "SSHVPN", "static", "8.8.8.8"])
-            .output();
+
+        // 5. Setup DNS
+        if !dns_servers.is_empty() {
+            // Set the first DNS server (clears existing)
+            let _ = Command::new("netsh")
+                .args(["interface", "ip", "set", "dns", "SSHVPN", "static", &dns_servers[0]])
+                .output();
+
+            // Add subsequent DNS servers
+            for (i, dns) in dns_servers.iter().enumerate().skip(1) {
+                let index = (i + 1).to_string();
+                let _ = Command::new("netsh")
+                    .args(["interface", "ip", "add", "dns", "SSHVPN", dns, &format!("index={}", index)])
+                    .output();
+            }
+        }
+
 
         info!("Routing established");
         Ok(())

@@ -343,7 +343,7 @@ pub async fn start_vpn(state: State<'_, AppState>) -> Result<(), String> {
     let active_server = servers.iter().find(|s| s.is_active)
         .ok_or_else(|| "No active server selected".to_string())?;
 
-    vpn.start(settings.socks_port, &active_server.host).await.map_err(|e| e.to_string())
+    vpn.start(settings.socks_port, &active_server.host, &settings.custom_dns).await.map_err(|e| e.to_string())
 }
 
 /// Stop Global VPN
