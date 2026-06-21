@@ -1,5 +1,5 @@
 use std::process::Command;
-use tracing::{info, warn};
+use tracing::info;
 use crate::error::{Result, SshVpnError};
 
 pub struct RoutingManager {
@@ -29,17 +29,12 @@ impl RoutingManager {
         info!("Original gateway: {}, SSH IP: {}", gateway, ssh_ip);
 
         // 3. Add route to SSH server via original gateway
-        // route add <SSH_IP> mask 255.255.255.255 <GATEWAY> metric 1
         self.run_route_cmd(&["add", &ssh_ip, "mask", "255.255.255.255", &gateway, "metric", "1"])?;
 
         // 4. Add global route via TUN adapter
-        // route add 0.0.0.0 mask 0.0.0.0 10.10.10.1 metric 5
         self.run_route_cmd(&["add", "0.0.0.0", "mask", "0.0.0.0", "10.10.10.1", "metric", "5"])?;
 
-
-        // 5. Setup DNS (optional but recommended)
-        // For now, we can try to set the DNS of the TUN adapter to 8.8.8.8
-        // netsh interface ip set dns name="<TUN_NAME>" static 8.8.8.8
+        // 5. Setup DNS
         let _ = Command::new("netsh")
             .args(["interface", "ip", "set", "dns", "SSHVPN", "static", "8.8.8.8"])
             .output();
@@ -51,10 +46,8 @@ impl RoutingManager {
     pub fn restore_routing(&mut self) -> Result<()> {
         info!("Restoring original routing");
 
-        // Remove TUN route
         let _ = self.run_route_cmd(&["delete", "0.0.0.0", "mask", "0.0.0.0", "10.10.10.1"]);
 
-        // Remove SSH server route
         if let Some(ssh_ip) = &self.ssh_server_ip {
             let _ = self.run_route_cmd(&["delete", ssh_ip]);
         }
@@ -78,7 +71,6 @@ impl RoutingManager {
     }
 
     fn find_default_gateway(&self) -> Result<String> {
-        // Simple way to find gateway on Windows using netstat or powershell
         let output = Command::new("powershell")
             .args(["-Command", "Get-NetRoute -DestinationPrefix '0.0.0.0/0' | Sort-Object RouteMetric | Select-Object -First 1 -ExpandProperty NextHop"])
             .output()
@@ -91,7 +83,6 @@ impl RoutingManager {
             }
         }
 
-        // Fallback or error
         Err(SshVpnError::NetworkError("Could not find default gateway".to_string()))
     }
 
@@ -103,7 +94,7 @@ impl RoutingManager {
 
         if !output.status.success() {
             let err = String::from_utf8_lossy(&output.stderr);
-            warn!("Route command warning ({}): {}", args.join(" "), err);
+            tracing::warn!("Route command warning ({}): {}", args.join(" "), err);
         }
         Ok(())
     }

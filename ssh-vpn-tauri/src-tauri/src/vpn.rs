@@ -1,6 +1,6 @@
 use crate::routing::RoutingManager;
 use std::sync::Arc;
-use tracing::{info, error, warn};
+use tracing::{info, error};
 use crate::error::{Result, SshVpnError};
 use std::process::Command;
 
@@ -27,27 +27,20 @@ impl VpnManager {
         info!("Starting Global VPN mode (Wintun)");
         self.should_stop.store(false, std::sync::atomic::Ordering::SeqCst);
 
-        // Load wintun.dll - assume it's in the same directory as the executable
         let wintun = unsafe {
             wintun::load()
                 .map_err(|e| SshVpnError::NetworkError(format!("Failed to load wintun.dll: {}", e)))?
         };
 
-        let adapter = wintun::Adapter::create(&wintun, "SSHVPN", "SSH VPN Tunnel", None)
-            .map_err(|e| SshVpnError::NetworkError(format!("Failed to create Wintun adapter: {}", e)))?;
+        let adapter = Arc::new(wintun::Adapter::create(&wintun, "SSHVPN", "SSH VPN Tunnel", None)
+            .map_err(|e| SshVpnError::NetworkError(format!("Failed to create Wintun adapter: {}", e)))?);
 
-        let adapter = Arc::new(adapter);
-
-        // Configure IP
         self.configure_interface(&adapter)?;
-
-        // Setup Routing
         self.routing.setup_routing(ssh_host)?;
 
         self.wintun = Some(Arc::clone(&adapter));
 
-        // Start TUN to SOCKS worker
-        let adapter_worker = adapter.clone();
+        let adapter_worker = Arc::clone(&adapter);
         let stop_flag = Arc::clone(&self.should_stop);
 
         tokio::spawn(async move {
@@ -65,7 +58,6 @@ impl VpnManager {
 
         info!("Configuring interface {} with IP 10.10.10.1", interface_name);
 
-        // Set IP and Mask
         let output = Command::new("netsh")
             .args(["interface", "ip", "set", "address", &interface_name, "static", "10.10.10.1", "255.255.255.0", "none"])
             .output()
@@ -73,10 +65,9 @@ impl VpnManager {
 
         if !output.status.success() {
             let err = String::from_utf8_lossy(&output.stderr);
-            warn!("Netsh IP set warning: {}", err);
+            tracing::warn!("Netsh IP set warning: {}", err);
         }
 
-        // Set MTU
         let _ = Command::new("netsh")
             .args(["interface", "ipv4", "set", "subinterface", &interface_name, "mtu=1500", "store=active"])
             .output();
@@ -91,27 +82,13 @@ impl VpnManager {
         let session = Arc::new(session);
         info!("Wintun session active. Forwarding to SOCKS port {}", socks_port);
 
-        // This is where tun2socks logic would go.
-        // It requires a TCP/IP stack (like smoltcp) to handle the TUN packets,
-        // and then it connects those streams to the SOCKS5 proxy.
-
         while !stop_flag.load(std::sync::atomic::Ordering::SeqCst) {
             match session.receive_blocking() {
                 Ok(packet) => {
-                    // Packet processing logic
-                    // For now, we'll just log and drop until full tun2socks is implemented
-
-                    // UDP over SSH is complex as SSH only tunnels TCP.
-                    // Options:
-                    // 1. UDP-over-TCP wrapping (requires server-side support like udptunnel)
-                    // 2. SOCKS5 UDP ASSOCIATE (requires SOCKS5 server support and client implementation)
-                    // For now, we log UDP packets for debugging
                     let data = packet.bytes();
-                    if data.len() > 20 && data[9] == 17 { // 17 = UDP
-                         // info!("UDP packet detected, but UDP tunneling is not yet fully implemented via SSH TCP");
+                    if data.len() > 20 && data[9] == 17 {
+                        // UDP detected
                     }
-
-                    // ...
                 }
                 Err(e) => {
                     if stop_flag.load(std::sync::atomic::Ordering::SeqCst) {
@@ -133,7 +110,6 @@ impl VpnManager {
         self.should_stop.store(true, std::sync::atomic::Ordering::SeqCst);
 
         if let Some(adapter) = self.wintun.take() {
-            // Drop adapter
             drop(adapter);
         }
 
