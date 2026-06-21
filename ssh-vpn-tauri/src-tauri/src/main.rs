@@ -1,6 +1,6 @@
-use tauri::Manager;
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use tauri::Manager;
 use ssh_vpn_lib::{commands::AppState, storage::Storage, ssh_client::SshClient, bandwidth::BandwidthMonitor, vpn::VpnManager};
 use std::sync::Arc;
 use tokio::sync::Mutex;
