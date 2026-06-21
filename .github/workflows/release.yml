@@ -96,7 +96,7 @@ jobs:
       run: |
         Invoke-WebRequest -Uri "https://www.wintun.net/builds/wintun-0.14.1.zip" -OutFile "wintun.zip"
         Expand-Archive -Path "wintun.zip" -DestinationPath "wintun_extract"
-        Copy-Item "wintun_extract/wintun/bin/amd64/wintun.dll" -Destination "ssh-vpn-tauri/src-tauri/wintun.dll"
+        Copy-Item "wintun_extract/wintun/bin/amd64/wintun.dll" -Destination "src-tauri/wintun.dll"
 
     - name: Install dependencies
       run: npm install

@@ -33,29 +33,9 @@ impl VpnManager {
         };
 
         // wintun::Adapter::create in v0.4 returns Result<Arc<Adapter>, Error>
-        let adapter = wintun::Adapter::create(&wintun_lib, "SSHVPN", "SSH VPN Tunnel", None)
+                let adapter = wintun::Adapter::create(&wintun_lib, "SSH VPN Tunnel", "SSH VPN Tunnel", None)
             .map_err(|e| SshVpnError::NetworkError(format!("Failed to create Wintun adapter: {}", e)))?;
-
-        self.configure_interface(&adapter)?;
-        self.routing.setup_routing(ssh_host, dns_servers)?;
-
-        self.wintun = Some(Arc::clone(&adapter));
-
-        let adapter_worker = Arc::clone(&adapter);
-        let stop_flag = Arc::clone(&self.should_stop);
-
-        tokio::spawn(async move {
-            if let Err(e) = Self::run_tun_to_socks(adapter_worker, socks_port, stop_flag).await {
-                error!("TUN to SOCKS worker failed: {}", e);
-            }
-        });
-
-        Ok(())
-    }
-
-    fn configure_interface(&self, adapter: &wintun::Adapter) -> Result<()> {
-        let interface_name = adapter.get_name()
-            .map_err(|e| SshVpnError::NetworkError(format!("Failed to get adapter name: {}", e)))?;
+        let adapter = Arc::new(adapter);
 
         info!("Configuring interface {} with IP 10.10.10.1", interface_name);
 
