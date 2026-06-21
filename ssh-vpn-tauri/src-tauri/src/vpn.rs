@@ -1,6 +1,7 @@
 use crate::routing::RoutingManager;
+use crate::debug::{DebugManager, LogLevel};
 use std::sync::Arc;
-use tracing::{info, error};
+use tracing::{info, warn, error};
 use crate::error::{Result, SshVpnError};
 use std::process::Command;
 
@@ -8,6 +9,7 @@ pub struct VpnManager {
     wintun: Option<Arc<wintun::Adapter>>,
     should_stop: Arc<std::sync::atomic::AtomicBool>,
     routing: RoutingManager,
+    debug_manager: Option<Arc<DebugManager>>,
 }
 
 impl VpnManager {
@@ -16,12 +18,21 @@ impl VpnManager {
             wintun: None,
             should_stop: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             routing: RoutingManager::new(),
+            debug_manager: None,
         }
+    }
+
+    pub fn set_debug_manager(&mut self, debug_manager: Arc<DebugManager>) {
+        self.debug_manager = Some(debug_manager);
     }
 
     pub async fn start(&mut self, socks_port: u16, ssh_host: &str, dns_servers: &[String]) -> Result<()> {
         if self.wintun.is_some() {
             return Ok(());
+        }
+
+        if let Some(dm) = &self.debug_manager {
+            dm.log(LogLevel::Info, "VPN", "Initializing Global VPN (Wintun)").await;
         }
 
         info!("Starting Global VPN mode (Wintun)");
@@ -45,7 +56,6 @@ impl VpnManager {
             }
         }.map_err(|e| SshVpnError::NetworkError(format!("Failed to load wintun.dll: {}", e)))?;
 
-        // In wintun 0.4.0, create returns Arc<Adapter>
         let adapter = wintun::Adapter::create(&wintun_lib, "SSH VPN Tunnel", "SSH VPN Tunnel", None)
             .map_err(|e| SshVpnError::NetworkError(format!("Failed to create Wintun adapter: {}", e)))?;
 
@@ -54,7 +64,6 @@ impl VpnManager {
 
         info!("Configuring interface {} with IP 10.10.10.1", interface_name);
 
-        // Set IP and Mask
         let output = Command::new("netsh")
             .args(["interface", "ip", "set", "address", &interface_name, "static", "10.10.10.1", "255.255.255.0", "none"])
             .output()
@@ -62,7 +71,10 @@ impl VpnManager {
 
         if !output.status.success() {
             let err = String::from_utf8_lossy(&output.stderr);
-            tracing::warn!("Netsh IP set warning: {}", err);
+            warn!("Netsh IP set warning: {}", err);
+            if let Some(dm) = &self.debug_manager {
+                dm.log(LogLevel::Warning, "VPN", &format!("Netsh warning: {}", err)).await;
+            }
         }
 
         let _ = Command::new("netsh")
@@ -71,29 +83,37 @@ impl VpnManager {
 
         self.routing.setup_routing(ssh_host, dns_servers, &interface_name)?;
 
-        // Flush DNS cache
         let _ = Command::new("ipconfig").args(["/flushdns"]).output();
 
         self.wintun = Some(Arc::clone(&adapter));
 
         let adapter_worker = Arc::clone(&adapter);
         let stop_flag = Arc::clone(&self.should_stop);
+        let dm_worker = self.debug_manager.clone();
 
         tokio::spawn(async move {
-            if let Err(e) = Self::run_tun_to_socks(adapter_worker, socks_port, stop_flag).await {
-                error!("TUN to SOCKS worker failed: {}", e);
+            if let Err(e) = Self::run_tun_bridge(adapter_worker, socks_port, stop_flag, dm_worker).await {
+                error!("TUN bridge failed: {}", e);
             }
         });
+
+        if let Some(dm) = &self.debug_manager {
+            dm.log(LogLevel::Info, "VPN", "Global VPN started successfully").await;
+        }
 
         Ok(())
     }
 
-    async fn run_tun_to_socks(adapter: Arc<wintun::Adapter>, _socks_port: u16, stop_flag: Arc<std::sync::atomic::AtomicBool>) -> Result<()> {
+    async fn run_tun_bridge(adapter: Arc<wintun::Adapter>, socks_port: u16, stop_flag: Arc<std::sync::atomic::AtomicBool>, dm: Option<Arc<DebugManager>>) -> Result<()> {
         let session = adapter.start_session(wintun::MAX_RING_CAPACITY)
             .map_err(|e| SshVpnError::NetworkError(format!("Failed to start Wintun session: {}", e)))?;
 
         let session = Arc::new(session);
-        info!("Wintun session active.");
+        info!("TUN bridge active. Target SOCKS port: {}", socks_port);
+
+        if let Some(ref d) = dm {
+            d.log(LogLevel::Info, "VPN", "Packet bridge loop entered").await;
+        }
 
         while !stop_flag.load(std::sync::atomic::Ordering::SeqCst) {
             match session.receive_blocking() {
@@ -107,17 +127,24 @@ impl VpnManager {
                     if stop_flag.load(std::sync::atomic::Ordering::SeqCst) {
                         break;
                     }
-                    tracing::warn!("Wintun receive non-fatal error or timeout: {}", e);
-                    std::thread::sleep(std::time::Duration::from_millis(10));
+                    warn!("Wintun receive error: {}", e);
+                    tokio::time::sleep(std::time::Duration::from_millis(10)).await;
                 }
             }
         }
 
-        info!("TUN to SOCKS worker stopped");
+        info!("TUN bridge worker stopped");
         Ok(())
     }
 
     pub fn stop(&mut self) -> Result<()> {
+        if let Some(dm) = &self.debug_manager {
+            let dm = dm.clone();
+            tokio::spawn(async move {
+                dm.log(LogLevel::Info, "VPN", "Stopping Global VPN").await;
+            });
+        }
+
         let _ = self.routing.restore_routing();
         info!("Stopping Global VPN mode");
         self.should_stop.store(true, std::sync::atomic::Ordering::SeqCst);

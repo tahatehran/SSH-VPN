@@ -1,21 +1,32 @@
-import { useTranslation } from 'react-i18next';
+import React from 'react';
 import ConnectionCard from './ConnectionCard';
-import BandwidthChart from './BandwidthChart';
 import StatsPanel from './StatsPanel';
+import BandwidthChart from './BandwidthChart';
+import { useAppStore } from '../../store/appStore';
+import DebugLogs from './DebugLogs';
 
 export default function Dashboard() {
-  const { t } = useTranslation();
+  const { connectionStatus } = useAppStore();
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-[var(--text-primary)]">{t('dashboard.title')}</h2>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ConnectionCard />
-        <BandwidthChart />
+    <div className="space-y-6 max-w-6xl mx-auto pb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <ConnectionCard />
+        </div>
+        <div className="lg:col-span-2">
+          <StatsPanel />
+        </div>
       </div>
-      
-      <StatsPanel />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 h-[400px]">
+          <BandwidthChart />
+        </div>
+        <div className="lg:col-span-1 h-[400px]">
+          <DebugLogs />
+        </div>
+      </div>
     </div>
   );
 }

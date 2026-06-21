@@ -1,26 +1,18 @@
-use crate::error::{Result, SshVpnError};
-use chrono::{DateTime, Utc};
+use std::sync::Arc;
+use tokio::sync::{Mutex, broadcast};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpListener;
+use tracing::{info, warn, error};
 use serde::{Deserialize, Serialize};
-use ssh2::Session;
-use std::io::{Read, Write};
-use std::net::{TcpStream, SocketAddr, ToSocketAddrs};
+use chrono::{DateTime, Utc};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-use tokio::sync::broadcast;
-use tracing::{info, warn};
+use crate::error::{Result, SshVpnError};
+use async_ssh2_tokio::client::{Client, AuthMethod};
+use crate::debug::{DebugManager, LogLevel};
+use crate::bandwidth::BandwidthMonitor;
 
-/// Shared state for SOCKS proxy handling across threads
-#[derive(Clone)]
-pub struct SocksProxyHandle {
-    pub session: Arc<Mutex<Option<Session>>>,
-    pub listener: Arc<Mutex<Option<std::net::TcpListener>>>,
-    pub should_stop: Arc<AtomicBool>,
-}
-
-/// Connection state enum
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "lowercase")]
 pub enum ConnectionState {
     Disconnected,
     Connecting,
@@ -29,13 +21,6 @@ pub enum ConnectionState {
     Error(String),
 }
 
-impl Default for ConnectionState {
-    fn default() -> Self {
-        ConnectionState::Disconnected
-    }
-}
-
-/// Server information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerInfo {
     pub id: String,
@@ -44,9 +29,7 @@ pub struct ServerInfo {
     pub host: String,
     pub port: u16,
     pub username: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub private_key_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub country: Option<String>,
@@ -59,34 +42,6 @@ pub struct ServerInfo {
     pub last_used: Option<DateTime<Utc>>,
 }
 
-impl ServerInfo {
-    pub fn new(
-        id: String,
-        name: String,
-        host: String,
-        port: u16,
-        username: String,
-    ) -> Self {
-        Self {
-            id,
-            name,
-            name_fa: None,
-            host,
-            port,
-            username,
-            password: None,
-            private_key_path: None,
-            country: None,
-            city: None,
-            priority: 0,
-            is_active: false,
-            created_at: Utc::now(),
-            last_used: None,
-        }
-    }
-}
-
-/// Connection status
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionStatus {
     pub state: ConnectionState,
@@ -110,456 +65,185 @@ impl Default for ConnectionStatus {
     }
 }
 
-/// Reconnect configuration
-#[derive(Debug, Clone)]
-pub struct ReconnectConfig {
-    pub initial_delay_ms: u64,
-    pub max_delay_ms: u64,
-    pub max_retries: u32,
-    pub multiplier: f64,
-}
-
-impl Default for ReconnectConfig {
-    fn default() -> Self {
-        Self {
-            initial_delay_ms: 1000,
-            max_delay_ms: 30000,
-            max_retries: 10,
-            multiplier: 2.0,
-        }
-    }
-}
-
-/// SSH client for managing connections
 pub struct SshClient {
-    socks_handle: SocksProxyHandle,  // Shared SOCKS proxy state
+    client: Arc<Mutex<Option<Client>>>,
     status: ConnectionStatus,
     state_tx: broadcast::Sender<ConnectionState>,
-    should_disconnect: Arc<AtomicBool>,
-    reconnect_config: ReconnectConfig,
+    should_stop: Arc<AtomicBool>,
+    debug_manager: Option<Arc<DebugManager>>,
+    bandwidth: Option<Arc<BandwidthMonitor>>,
 }
 
 impl SshClient {
     pub fn new() -> Self {
         let (state_tx, _) = broadcast::channel(100);
         Self {
-            socks_handle: SocksProxyHandle {
-                session: Arc::new(Mutex::new(None)),
-                listener: Arc::new(Mutex::new(None)),
-                should_stop: Arc::new(AtomicBool::new(false)),
-            },
+            client: Arc::new(Mutex::new(None)),
             status: ConnectionStatus::default(),
             state_tx,
-            should_disconnect: Arc::new(AtomicBool::new(false)),
-            reconnect_config: ReconnectConfig::default(),
+            should_stop: Arc::new(AtomicBool::new(false)),
+            debug_manager: None,
+            bandwidth: None,
         }
     }
 
-    /// Set the local SOCKS proxy port
+    pub fn set_debug_manager(&mut self, debug_manager: Arc<DebugManager>) {
+        self.debug_manager = Some(debug_manager);
+    }
+
+    pub fn set_bandwidth(&mut self, bandwidth: Arc<BandwidthMonitor>) {
+        self.bandwidth = Some(bandwidth);
+    }
+
     pub fn set_local_port(&mut self, port: u16) {
         self.status.local_port = port;
     }
 
-    /// Connect to SSH server with auto-reconnect
     pub async fn connect(&mut self, server: &ServerInfo) -> Result<ConnectionStatus> {
-        self.should_disconnect.store(false, Ordering::SeqCst);
-        self.socks_handle.should_stop.store(false, Ordering::SeqCst);
+        let dm = self.debug_manager.clone();
+        if let Some(ref d) = dm {
+            d.log(LogLevel::Info, "SSH", &format!("Initiating connection to {}:{}", server.host, server.port)).await;
+        }
+
         self.update_state(ConnectionState::Connecting);
+        self.should_stop.store(false, Ordering::SeqCst);
 
-        let mut delay_ms = self.reconnect_config.initial_delay_ms;
-        let mut retries = 0;
-
-        loop {
-            match self.establish_connection(server).await {
-                Ok(_) => {
-                    info!("Connected to SSH server {}", server.host);
-                    self.update_state(ConnectionState::Connected);
-                    return Ok(self.status.clone());
-                }
-                Err(e) => {
-                    if self.should_disconnect.load(Ordering::SeqCst) {
-                        return Err(e);
-                    }
-
-                    retries += 1;
-                    if retries > self.reconnect_config.max_retries {
-                        let error = format!("Max retries ({}) exceeded", self.reconnect_config.max_retries);
-                        self.update_state(ConnectionState::Error(error.clone()));
-                        return Err(SshVpnError::ConnectionFailed(error));
-                    }
-
-                    warn!("Connection attempt {} failed: {}, retrying in {}ms", 
-                          retries, e, delay_ms);
-                    self.update_state(ConnectionState::Reconnecting);
-
-                    tokio::time::sleep(tokio::time::Duration::from_millis(delay_ms)).await;
-                    delay_ms = (delay_ms as f64 * self.reconnect_config.multiplier) as u64;
-                    delay_ms = delay_ms.min(self.reconnect_config.max_delay_ms);
-                }
-            }
-        }
-    }
-
-    async fn establish_connection(&mut self, server: &ServerInfo) -> Result<()> {
-        // Use ToSocketAddrs to safely resolve hostnames to socket addresses
-        let addr_str = format!("{}:{}", server.host, server.port);
-        let socket_addrs: Vec<SocketAddr> = addr_str
-            .to_socket_addrs()
-            .map_err(|e| SshVpnError::NetworkError(format!("Failed to resolve {}: {}", server.host, e)))?
-            .collect();
-        
-        if socket_addrs.is_empty() {
-            return Err(SshVpnError::NetworkError(format!("No addresses found for {}", server.host)));
-        }
-        
-        let addr = socket_addrs[0];
-        
-        let tcp = TcpStream::connect_timeout(&addr, Duration::from_secs(30))
-            .map_err(|e| SshVpnError::NetworkError(e.to_string()))?;
-
-        let mut session = Session::new().map_err(|e| SshVpnError::ConnectionFailed(e.to_string()))?;
-        session.set_tcp_stream(tcp);
-        session.handshake().map_err(|e| SshVpnError::ConnectionFailed(e.to_string()))?;
-
-        // Authenticate
-        if let Some(password) = &server.password {
-            session.userauth_password(&server.username, password)
-                .map_err(|e| SshVpnError::AuthFailed(e.to_string()))?;
-        } else if let Some(key_path) = &server.private_key_path {
-            session.userauth_pubkey_file(&server.username, None, std::path::Path::new(key_path), None)
-                .map_err(|e| SshVpnError::AuthFailed(e.to_string()))?;
+        let auth_method = if let Some(password) = &server.password {
+            AuthMethod::with_password(password)
         } else {
-            return Err(SshVpnError::AuthFailed("No authentication method provided".to_string()));
-        }
-
-        if !session.authenticated() {
-            return Err(SshVpnError::AuthFailed("Authentication failed".to_string()));
-        }
-
-        // Create local SOCKS5 proxy listener (equivalent to SSH -D dynamic port forwarding)
-        let local_addr = format!("127.0.0.1:{}", self.status.local_port);
-        let socks_listener = std::net::TcpListener::bind(&local_addr)
-            .map_err(|e| SshVpnError::SocksProxyError(format!("Failed to bind SOCKS proxy on {}: {}", local_addr, e)))?;
-        
-        // Set socket reuse options
-        if let Err(e) = socks_listener.set_nonblocking(true) {
-            warn!("Failed to set non-blocking: {}", e);
-        }
-
-        *self.socks_handle.session.lock().unwrap() = Some(session);
-        *self.socks_handle.listener.lock().unwrap() = Some(socks_listener);
-        self.status.connected_at = Some(chrono::Utc::now());
-        self.status.server = Some(server.clone());
-
-        info!("SOCKS5 proxy listening on {}", local_addr);
-        
-        // Start background SOCKS proxy loop
-        let handle = self.get_socks_handle();
-        std::thread::spawn(move || {
-            SshClient::socks_proxy_loop(handle);
-        });
-        
-        Ok(())
-    }
-
-    /// Handle a SOCKS5 connection - call this in a loop when listener is active
-    pub fn handle_socks_connection(&self) -> Result<()> {
-        let listener_guard = match self.socks_handle.listener.lock() {
-            Ok(guard) => guard,
-            Err(e) => return Err(SshVpnError::SocksProxyError(format!("Lock poisoned: {}", e))),
+            let msg = "No authentication method provided".to_string();
+            if let Some(ref d) = dm { d.log(LogLevel::Error, "SSH", &msg).await; }
+            return Err(SshVpnError::AuthFailed(msg));
         };
-        
-        let listener = match listener_guard.as_ref() {
-            Some(l) => l,
-            None => return Ok(()),
-        };
-        
-        let session = Arc::clone(&self.socks_handle.session);
-        
-        match listener.accept() {
-            Ok((mut client_stream, client_addr)) => {
-                info!("SOCKS connection from {}", client_addr);
+
+        match Client::connect((server.host.as_str(), server.port), &server.username, auth_method).await {
+            Ok(client) => {
+                if let Some(ref d) = dm { d.log(LogLevel::Info, "SSH", "Handshake and Auth successful").await; }
+                *self.client.lock().await = Some(client);
+                self.status.connected_at = Some(Utc::now());
+                self.status.server = Some(server.clone());
+                self.update_state(ConnectionState::Connected);
+
+                let port = self.status.local_port;
+                let client_arc = Arc::clone(&self.client);
+                let stop_flag = Arc::clone(&self.should_stop);
+                let dm_proxy = dm.clone();
+                let bw_proxy = self.bandwidth.clone();
                 
-                // Handle in a blocking task with session reference
-                std::thread::spawn(move || {
-                    if let Err(e) = Self::handle_socks5_connection_internal(&mut client_stream, session) {
-                        warn!("SOCKS5 handling error: {}", e);
+                tokio::spawn(async move {
+                    if let Err(e) = Self::run_socks_proxy(port, client_arc, stop_flag, dm_proxy, bw_proxy).await {
+                        error!("SOCKS proxy error: {}", e);
                     }
                 });
-            }
-            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                // No connection pending
+
+                Ok(self.status.clone())
             }
             Err(e) => {
-                warn!("SOCKS accept error: {}", e);
+                let err_msg = format!("SSH Core Error: {}", e);
+                if let Some(ref d) = dm { d.log(LogLevel::Error, "SSH", &err_msg).await; }
+                self.update_state(ConnectionState::Error(err_msg.clone()));
+                Err(SshVpnError::ConnectionFailed(err_msg))
             }
-        }
-        Ok(())
-    }
-
-    /// Get a clone of the SOCKS proxy handle for background task
-    pub fn get_socks_handle(&self) -> SocksProxyHandle {
-        SocksProxyHandle {
-            session: Arc::clone(&self.socks_handle.session),
-            listener: Arc::clone(&self.socks_handle.listener),
-            should_stop: Arc::clone(&self.socks_handle.should_stop),
         }
     }
 
-    /// Start background task to poll SOCKS connections
-    pub fn socks_proxy_loop(socks_handle: SocksProxyHandle) {
-        info!("SOCKS proxy loop started");
-        let mut check_count = 0;
-        while !socks_handle.should_stop.load(Ordering::SeqCst) {
-            check_count += 1;
-            if check_count % 100 == 0 {
-                info!("SOCKS proxy loop still running (check #{})", check_count);
-            }
-            
-            let listener_guard = match socks_handle.listener.lock() {
-                Ok(guard) => guard,
-                Err(e) => {
-                    warn!("Listener lock poisoned: {}", e);
-                    std::thread::sleep(std::time::Duration::from_millis(100));
-                    continue;
-                }
+    async fn run_socks_proxy(port: u16, client: Arc<Mutex<Option<Client>>>, stop_flag: Arc<AtomicBool>, dm: Option<Arc<DebugManager>>, bw: Option<Arc<BandwidthMonitor>>) -> Result<()> {
+        let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).await?;
+        if let Some(ref d) = dm { d.log(LogLevel::Info, "SOCKS", &format!("Internal proxy active on port {}", port)).await; }
+
+        while !stop_flag.load(Ordering::SeqCst) {
+            let (mut stream, addr) = match tokio::time::timeout(std::time::Duration::from_millis(500), listener.accept()).await {
+                Ok(Ok(res)) => res,
+                _ => continue,
             };
-            
-            if let Some(ref listener) = *listener_guard {
-                match listener.accept() {
-                    Ok((mut client_stream, client_addr)) => {
-                        info!("SOCKS connection ACCEPTED from {}", client_addr);
-                        let session = Arc::clone(&socks_handle.session);
-                        drop(listener_guard); // Release lock before spawning thread
-                        std::thread::spawn(move || {
-                            info!("Starting SOCKS5 handler thread for {}", client_addr);
-                            match Self::handle_socks5_connection_internal(&mut client_stream, session) {
-                                Ok(_) => info!("SOCKS5 handler completed for {}", client_addr),
-                                Err(e) => warn!("SOCKS5 handling error for {}: {}", client_addr, e),
-                            }
-                        });
-                    }
-                    Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                        // No connection pending, sleep briefly
-                        drop(listener_guard);
-                        std::thread::sleep(std::time::Duration::from_millis(10));
-                    }
-                    Err(e) => {
-                        warn!("SOCKS accept error: {}", e);
-                        drop(listener_guard);
-                        std::thread::sleep(std::time::Duration::from_millis(100));
-                    }
+
+            let client_arc = Arc::clone(&client);
+            let dm_conn = dm.clone();
+            let bw_conn = bw.clone();
+
+            tokio::spawn(async move {
+                if let Err(e) = Self::handle_socks_connection(&mut stream, client_arc, dm_conn, bw_conn).await {
+                    warn!("Connection handling failed for {}: {}", addr, e);
                 }
-            } else {
-                // No listener, sleep and wait
-                drop(listener_guard);
-                std::thread::sleep(std::time::Duration::from_millis(100));
-            }
+            });
         }
-        info!("SOCKS proxy loop stopped");
+        Ok(())
     }
 
-    /// Internal SOCKS5 connection handler - with actual SSH forwarding
-    fn handle_socks5_connection_internal(
-        client_stream: &mut std::net::TcpStream,
-        session: Arc<Mutex<Option<Session>>>,
-    ) -> Result<()> {
-        info!("Starting SOCKS5 connection handler");
-        
-        // SOCKS5 handshake
+    async fn handle_socks_connection(stream: &mut tokio::net::TcpStream, client_arc: Arc<Mutex<Option<Client>>>, dm: Option<Arc<DebugManager>>, bw: Option<Arc<BandwidthMonitor>>) -> Result<()> {
         let mut buf = [0u8; 2];
-        client_stream.read_exact(&mut buf)?;
-        info!("SOCKS5 handshake received: version={}, n_methods={}", buf[0], buf[1]);
-        
-        if buf[0] != 0x05 {
-            return Err(SshVpnError::SocksProxyError("Invalid SOCKS version".to_string()));
-        }
-        
-        let num_auth_methods = buf[1] as usize;
-        let mut auth_methods = vec![0u8; num_auth_methods];
-        client_stream.read_exact(&mut auth_methods)?;
-        
-        // We only support NO_AUTH (0x00)
-        client_stream.write_all(&[0x05, 0x00])?;
-        info!("SOCKS5 handshake response sent");
-        
-        // SOCKS5 request
-        let mut request = [0u8; 4];
-        client_stream.read_exact(&mut request)?;
-        info!("SOCKS5 request: cmd={}, addr_type={}", request[1], request[3]);
-        
-        if request[0] != 0x05 {
-            return Err(SshVpnError::SocksProxyError("Invalid SOCKS version in request".to_string()));
-        }
-        
-        let cmd = request[1]; // CMD: 0x01 = CONNECT, 0x02 = BIND, 0x03 = UDP ASSOCIATE
-        
-        // Parse destination address
-        let (dst_host, dst_port) = match request[3] {
-            0x01 => { // IPv4
-                let mut addr = [0u8; 4];
-                client_stream.read_exact(&mut addr)?;
-                let host = format!("{}.{}.{}.{}", addr[0], addr[1], addr[2], addr[3]);
-                let mut port = [0u8; 2];
-                client_stream.read_exact(&mut port)?;
-                let port = u16::from_be_bytes(port);
-                (host, port)
+        stream.read_exact(&mut buf).await?;
+        if buf[0] != 0x05 { return Ok(()); }
+        let n_methods = buf[1] as usize;
+        let mut methods = vec![0u8; n_methods];
+        stream.read_exact(&mut methods).await?;
+        stream.write_all(&[0x05, 0x00]).await?;
+
+        let mut req = [0u8; 4];
+        stream.read_exact(&mut req).await?;
+        if req[1] != 0x01 { return Ok(()); }
+
+        let (dst_host, dst_port) = match req[3] {
+            0x01 => {
+                let mut ip = [0u8; 4];
+                stream.read_exact(&mut ip).await?;
+                (format!("{}.{}.{}.{}", ip[0], ip[1], ip[2], ip[3]), u16::from_be_bytes([stream.read_u8().await?, stream.read_u8().await?]))
             }
-            0x03 => { // Domain name
-                let len = {
-                    let mut b = [0u8; 1];
-                    client_stream.read_exact(&mut b)?;
-                    b[0] as usize
-                };
+            0x03 => {
+                let len = stream.read_u8().await? as usize;
                 let mut domain = vec![0u8; len];
-                client_stream.read_exact(&mut domain)?;
-                let host = String::from_utf8(domain)
-                    .map_err(|e| SshVpnError::SocksProxyError(format!("Invalid domain: {}", e)))?;
-                let mut port = [0u8; 2];
-                client_stream.read_exact(&mut port)?;
-                let port = u16::from_be_bytes(port);
-                (host, port)
+                stream.read_exact(&mut domain).await?;
+                let port = u16::from_be_bytes([stream.read_u8().await?, stream.read_u8().await?]);
+                (String::from_utf8_lossy(&domain).to_string(), port)
             }
-            0x04 => { // IPv6
-                let mut addr = [0u8; 16];
-                client_stream.read_exact(&mut addr)?;
-                let host = format!("{:x?}", &addr);
-                let mut port = [0u8; 2];
-                client_stream.read_exact(&mut port)?;
-                let port = u16::from_be_bytes(port);
-                (host, port)
-            }
-            _ => return Err(SshVpnError::SocksProxyError("Unsupported address type".to_string())),
+            _ => return Ok(()),
         };
-        
-        info!("SOCKS5 connect request: {}:{}", dst_host, dst_port);
-        
-        if cmd != 0x01 {
-            // We only support CONNECT
-            client_stream.write_all(&[0x05, 0x07, 0x00, 0x01])?; // Command not supported
-            return Err(SshVpnError::SocksProxyError("Only CONNECT command supported".to_string()));
-        }
-        
-        // Get session from Arc<Mutex>
-        let session_guard = session.lock().unwrap();
-        let ssh_session = match session_guard.as_ref() {
-            Some(s) => s,
-            None => {
-                client_stream.write_all(&[0x05, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])?;
-                return Err(SshVpnError::SocksProxyError("SSH session not available".to_string()));
-            }
-        };
-        
-        info!("Opening SSH channel to {}:{}", dst_host, dst_port);
-        
-        // Open SSH channel for direct TCP
-        let mut channel = ssh_session.channel_direct_tcpip(&dst_host, dst_port, None)
-            .map_err(|e| SshVpnError::SocksProxyError(format!("Failed to open SSH channel: {}", e)))?;
-        
-        info!("SSH channel opened successfully!");
-        
-        // Send success response
-        client_stream.write_all(&[0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])?;
-        
-        info!("SOCKS5 connection to {}:{} forwarded via SSH", dst_host, dst_port);
-        
-        // Drop the lock before copying data
-        drop(session_guard);
-        
-        // Set timeouts to prevent infinite blocking
-        client_stream.set_read_timeout(Some(std::time::Duration::from_millis(100))).ok();
-        
-        // Copy data between client and SSH channel
-        let mut buf = [0u8; 8192];
-        let mut consecutive_timeouts = 0;
-        const MAX_IDLE_LOOPS: u32 = 300; // 30 seconds of no activity
-        
-        loop {
-            // Read from client and write to SSH channel
-            match client_stream.read(&mut buf) {
-                Ok(0) => {
-                    info!("Client closed connection");
-                    break;
-                }
-                Ok(n) => {
-                    channel.write_all(&buf[..n])?;
-                    consecutive_timeouts = 0;
-                }
-                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                    // Will check channel next
-                }
-                Err(e) => {
-                    warn!("Error reading from client: {}", e);
-                    break;
-                }
-            }
-            
-            // Read from SSH channel and write to client
-            match channel.read(&mut buf) {
-                Ok(0) => {
-                    info!("SSH channel closed by remote");
-                    break;
-                }
-                Ok(n) => {
-                    client_stream.write_all(&buf[..n])?;
-                    consecutive_timeouts = 0;
-                }
-                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock 
-                       || e.kind() == std::io::ErrorKind::TimedOut => {
-                    consecutive_timeouts += 1;
-                    if consecutive_timeouts >= MAX_IDLE_LOOPS {
-                        info!("Connection idle timeout, closing tunnel");
-                        break;
+
+        if let Some(ref d) = dm { d.log(LogLevel::Debug, "TUNNEL", &format!("Requesting channel to {}:{}", dst_host, dst_port)).await; }
+
+        let guard = client_arc.lock().await;
+        if let Some(client) = guard.as_ref() {
+            match client.handle().channel_direct_tcpip(&dst_host, dst_port, None).await {
+                Ok(mut channel) => {
+                    stream.write_all(&[0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0]).await?;
+
+                    let (mut ri, mut wi) = tokio::io::split(stream);
+                    let (mut rc, mut wc) = tokio::io::split(channel);
+
+                    let client_to_ssh = tokio::io::copy(&mut ri, &mut wc);
+                    let ssh_to_client = tokio::io::copy(&mut rc, &mut wi);
+
+                    match tokio::join!(client_to_ssh, ssh_to_client) {
+                        (Ok(sent), Ok(received)) => {
+                            if let Some(ref b) = bw {
+                                b.add_sent(sent);
+                                b.add_received(received);
+                            }
+                        }
+                        _ => {}
                     }
                 }
                 Err(e) => {
-                    warn!("Error reading from SSH channel: {}", e);
-                    break;
+                    if let Some(ref d) = dm { d.log(LogLevel::Warning, "SSH", &format!("Channel failed for {}: {}", dst_host, e)).await; }
+                    let _ = stream.write_all(&[0x05, 0x01, 0x00, 0x01, 0, 0, 0, 0, 0, 0]).await;
                 }
             }
-            
-            // Small sleep to prevent CPU spinning when both sides have no data
-            if consecutive_timeouts > 0 {
-                std::thread::sleep(std::time::Duration::from_millis(100));
-            }
         }
-        
-        let _ = channel.close();
-        let _ = channel.wait_close();
-        info!("SOCKS5 tunnel closed for {}:{}", dst_host, dst_port);
         Ok(())
     }
 
-    /// Disconnect from SSH server
     pub fn disconnect(&mut self) -> Result<()> {
-        self.should_disconnect.store(true, Ordering::SeqCst);
-        self.socks_handle.should_stop.store(true, Ordering::SeqCst);
-        *self.socks_handle.listener.lock().unwrap() = None;
-        *self.socks_handle.session.lock().unwrap() = None;
+        self.should_stop.store(true, Ordering::SeqCst);
         self.update_state(ConnectionState::Disconnected);
-        self.status = ConnectionStatus::default();
-        info!("Disconnected from SSH server");
         Ok(())
     }
 
-    /// Get current connection status
     pub fn get_status(&self) -> ConnectionStatus {
         self.status.clone()
-    }
-
-    /// Subscribe to state changes
-    pub fn subscribe(&self) -> broadcast::Receiver<ConnectionState> {
-        self.state_tx.subscribe()
     }
 
     fn update_state(&mut self, state: ConnectionState) {
         self.status.state = state.clone();
         let _ = self.state_tx.send(state);
-    }
-}
-
-impl Default for SshClient {
-    fn default() -> Self {
-        Self::new()
     }
 }

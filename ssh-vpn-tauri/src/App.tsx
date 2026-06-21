@@ -7,6 +7,7 @@ import StatusBar from './components/Layout/StatusBar';
 import Dashboard from './components/Dashboard/Dashboard';
 import ServerList from './components/ServerList/ServerList';
 import Settings from './components/Settings/Settings';
+import DebugLogs from './components/Dashboard/DebugLogs';
 
 function App() {
   const { i18n } = useTranslation();
@@ -20,19 +21,16 @@ function App() {
   } = useAppStore();
 
   useEffect(() => {
-    // Load initial data
     fetchSettings();
     fetchServers();
   }, []);
 
   useEffect(() => {
-    // Update language
     i18n.changeLanguage(language);
     document.documentElement.dir = language === 'fa' ? 'rtl' : 'ltr';
   }, [language, i18n]);
 
   useEffect(() => {
-    // Apply theme
     setTheme(theme);
   }, [theme, setTheme]);
 
@@ -42,6 +40,8 @@ function App() {
         return <ServerList />;
       case 'settings':
         return <Settings />;
+      case 'logs':
+        return <DebugLogs />;
       default:
         return <Dashboard />;
     }
