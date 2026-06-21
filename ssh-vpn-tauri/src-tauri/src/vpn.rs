@@ -27,13 +27,14 @@ impl VpnManager {
         info!("Starting Global VPN mode (Wintun)");
         self.should_stop.store(false, std::sync::atomic::Ordering::SeqCst);
 
-        let wintun = unsafe {
+        let wintun_lib = unsafe {
             wintun::load()
                 .map_err(|e| SshVpnError::NetworkError(format!("Failed to load wintun.dll: {}", e)))?
         };
 
-        let adapter = Arc::new(wintun::Adapter::create(&wintun, "SSHVPN", "SSH VPN Tunnel", None)
-            .map_err(|e| SshVpnError::NetworkError(format!("Failed to create Wintun adapter: {}", e)))?);
+        // wintun::Adapter::create in v0.4 returns Result<Arc<Adapter>, Error>
+        let adapter = wintun::Adapter::create(&wintun_lib, "SSHVPN", "SSH VPN Tunnel", None)
+            .map_err(|e| SshVpnError::NetworkError(format!("Failed to create Wintun adapter: {}", e)))?;
 
         self.configure_interface(&adapter)?;
         self.routing.setup_routing(ssh_host)?;
@@ -58,6 +59,7 @@ impl VpnManager {
 
         info!("Configuring interface {} with IP 10.10.10.1", interface_name);
 
+        // Set IP and Mask
         let output = Command::new("netsh")
             .args(["interface", "ip", "set", "address", &interface_name, "static", "10.10.10.1", "255.255.255.0", "none"])
             .output()
