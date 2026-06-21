@@ -1,5 +1,5 @@
 use std::process::Command;
-use tracing::info;
+use tracing::{info, warn};
 use crate::error::{Result, SshVpnError};
 
 pub struct RoutingManager {
@@ -18,7 +18,8 @@ impl RoutingManager {
     }
 
     pub fn setup_routing(&mut self, ssh_host: &str, dns_servers: &[String], interface_name: &str) -> Result<()> {
-        info!("Setting up routing for {}", ssh_host);
+        info!("Setting up routing for {} using interface {}", ssh_host, interface_name);
+        self.interface_name = Some(interface_name.to_string());
 
         // 1. Resolve SSH host to IP if it's a hostname
         let ssh_ip = self.resolve_host(ssh_host)?;
@@ -37,8 +38,6 @@ impl RoutingManager {
         self.run_route_cmd(&["add", "0.0.0.0", "mask", "0.0.0.0", "10.10.10.1", "metric", "5"])?;
 
         // 5. Setup DNS
-
-        // 5. Setup DNS
         if !dns_servers.is_empty() {
             // Set the first DNS server (clears existing)
             let _ = Command::new("netsh")
@@ -54,7 +53,6 @@ impl RoutingManager {
             }
         }
 
-
         info!("Routing established");
         Ok(())
     }
@@ -62,7 +60,7 @@ impl RoutingManager {
     pub fn restore_routing(&mut self) -> Result<()> {
         info!("Restoring original routing");
 
-                if let Some(ref name) = self.interface_name {
+        if let Some(ref _name) = self.interface_name {
             let _ = self.run_route_cmd(&["delete", "0.0.0.0", "mask", "0.0.0.0", "10.10.10.1"]);
         }
 
@@ -112,7 +110,7 @@ impl RoutingManager {
 
         if !output.status.success() {
             let err = String::from_utf8_lossy(&output.stderr);
-            tracing::warn!("Route command warning ({}): {}", args.join(" "), err);
+            warn!("Route command warning ({}): {}", args.join(" "), err);
         }
         Ok(())
     }
